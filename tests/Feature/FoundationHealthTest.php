@@ -29,7 +29,7 @@ class FoundationHealthTest extends TestCase
      */
     public function test_unauthenticated_api_request_is_rejected(): void
     {
-        $response = $this->getJson('/api/user');
+        $response = $this->getJson('/api/auth/me');
         $response->assertStatus(401);
     }
 }
