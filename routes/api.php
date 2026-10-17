@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\ClientController as AdminClientController;
+use App\Http\Controllers\Api\Admin\ContentController as AdminContentController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Api\Admin\FeaturedController as AdminFeaturedController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\EnquiryController;
 use App\Http\Controllers\Api\ProjectController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +35,28 @@ Route::prefix('projects')->group(function () {
     Route::get('/featured', [ProjectController::class, 'featured']);
     Route::get('/{slug_or_id}', [ProjectController::class, 'show']);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Public Enquiry & Contact Submission
+|--------------------------------------------------------------------------
+*/
+Route::prefix('enquiries')->group(function () {
+    Route::post('/', [EnquiryController::class, 'submit']);
+    Route::get('/config', [EnquiryController::class, 'config']);
+});
+Route::post('/contact', [EnquiryController::class, 'contact']);
+
+/*
+|--------------------------------------------------------------------------
+| Public Website Content & Editorial Sections
+|--------------------------------------------------------------------------
+*/
+Route::prefix('content')->group(function () {
+    Route::get('/', [ContentController::class, 'index']);
+    Route::get('/{section}', [ContentController::class, 'show']);
+});
+Route::get('/featured', [ContentController::class, 'featured']);
 
 /*
 |--------------------------------------------------------------------------
@@ -92,8 +118,24 @@ Route::middleware('auth:sanctum')->group(function () {
         // Enquiries and confidential proposal attachments
         Route::get('/enquiries', [AdminEnquiryController::class, 'index']);
         Route::get('/enquiries/{id}', [AdminEnquiryController::class, 'show']);
+        Route::patch('/enquiries/{id}', [AdminEnquiryController::class, 'update']);
         Route::patch('/enquiries/{id}/status', [AdminEnquiryController::class, 'updateStatus']);
+        Route::delete('/enquiries/{id}', [AdminEnquiryController::class, 'destroy']);
+        Route::post('/enquiries/{id}/convert-to-project', [AdminEnquiryController::class, 'convertToProject']);
+        Route::post('/enquiries/{id}/convert-to-client', [AdminEnquiryController::class, 'convertToClient']);
         Route::get('/enquiries/{id}/attachments/{attachmentId}', [AdminEnquiryController::class, 'downloadAttachment']);
+
+        // Lightweight Client Relationship Management
+        Route::get('/clients', [AdminClientController::class, 'index']);
+        Route::post('/clients', [AdminClientController::class, 'store']);
+        Route::get('/clients/{id}', [AdminClientController::class, 'show']);
+        Route::put('/clients/{id}', [AdminClientController::class, 'update']);
+        Route::delete('/clients/{id}', [AdminClientController::class, 'destroy']);
+
+        // Website Structured Content Management
+        Route::get('/content', [AdminContentController::class, 'index']);
+        Route::get('/content/{section}', [AdminContentController::class, 'show']);
+        Route::put('/content/{section}', [AdminContentController::class, 'update']);
     });
 });
 
