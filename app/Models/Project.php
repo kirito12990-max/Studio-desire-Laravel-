@@ -28,6 +28,7 @@ class Project extends Model
         'description',
         'cover_image',
         'status',
+        'publishing_status',
         'featured',
         'is_published',
         'vr_url',
@@ -36,6 +37,9 @@ class Project extends Model
         'vr_type',
         'grid_span',
         'aspect_ratio',
+        'seo_title',
+        'meta_description',
+        'canonical_url',
         'sort_order',
     ];
 
@@ -53,7 +57,7 @@ class Project extends Model
     protected static function booted(): void
     {
         static::saving(function (Project $project) {
-            if (empty($project->slug)) {
+            if (empty($project->slug) && !empty($project->title)) {
                 $baseSlug = Str::slug($project->title);
                 $slug = $baseSlug;
                 $counter = 1;
@@ -63,12 +67,88 @@ class Project extends Model
                 }
                 $project->slug = $slug;
             }
+
+            // Keep publishing_status and is_published consistently aligned
+            if (!empty($project->publishing_status)) {
+                $project->is_published = ($project->publishing_status === 'published');
+            } elseif ($project->is_published) {
+                $project->publishing_status = 'published';
+            } else {
+                $project->publishing_status = $project->publishing_status ?: 'draft';
+            }
         });
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true)->where('publishing_status', 'published');
+    }
+
+    public function scopeDraft($query)
+    {
+        return $query->where('publishing_status', 'draft');
+    }
+
+    public function scopeArchived($query)
+    {
+        return $query->where('publishing_status', 'archived');
+    }
+
+    /**
+     * Check if project satisfies publication criteria.
+     */
+    public function canBePublished(): bool
+    {
+        return count($this->getValidationErrorsForPublishing()) === 0;
+    }
+
+    /**
+     * Return list of missing publication requirements.
+     */
+    public function getValidationErrorsForPublishing(): array
+    {
+        $errors = [];
+        if (empty(trim($this->title ?? ''))) {
+            $errors['title'] = 'Project title is required for publication.';
+        }
+        if (empty($this->category_id)) {
+            $errors['category_id'] = 'Portfolio category assignment is required for publication.';
+        }
+        if (empty(trim($this->cover_image ?? ''))) {
+            $errors['cover_image'] = 'Cover image is required before publishing.';
+        }
+        return $errors;
+    }
+
+    public function portfolioCategory(): BelongsTo
+    {
+        return $this->belongsTo(PortfolioCategory::class, 'category_id');
     }
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(PortfolioCategory::class, 'category_id');
+    }
+
+    /**
+     * Resolves clean category display name avoiding attribute-relation collision.
+     */
+    public function getCategoryNameAttribute(): string
+    {
+        if ($this->relationLoaded('portfolioCategory') && $this->getRelation('portfolioCategory')) {
+            return $this->getRelation('portfolioCategory')->name;
+        }
+
+        if ($this->relationLoaded('category') && $this->getRelation('category') instanceof PortfolioCategory) {
+            return $this->getRelation('category')->name;
+        }
+
+        $raw = $this->attributes['category'] ?? null;
+        if (!empty($raw) && is_string($raw)) {
+            return $raw;
+        }
+
+        return $this->portfolioCategory()->first()?->name ?? 'Architecture';
     }
 
     public function subcategory(): BelongsTo
