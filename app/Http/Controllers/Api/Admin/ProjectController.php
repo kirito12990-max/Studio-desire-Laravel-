@@ -373,7 +373,7 @@ class ProjectController extends Controller
                 ];
             });
 
-        return response()->json([
+        $data = [
             'preview_mode' => true,
             'id' => $project->id,
             'title' => $project->title,
@@ -401,7 +401,11 @@ class ProjectController extends Controller
             'meta_description' => $project->meta_description,
             'canonical_url' => $project->canonical_url,
             'media' => $mediaList,
-        ]);
+        ];
+
+        return response()->json(array_merge($data, [
+            'project' => $data,
+        ]));
     }
 
     /**

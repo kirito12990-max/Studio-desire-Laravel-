@@ -101,6 +101,13 @@ class AuthController extends Controller
             'must_change_password' => (bool) $user->must_change_password,
             'token' => $token,
             'csrf_token' => csrf_token(),
+            'user' => [
+                'id' => $user->id,
+                'username' => $user->username ?? $user->name,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
         ]);
     }
 

@@ -1,0 +1,417 @@
+/* ==========================================================================
+   STUDIO DESIRE — STUDIO DESIRE PROFILE, ARCHITECTURAL PHILOSOPHY, AND TEAM LAYOUT
+   ========================================================================== */
+
+/* ==========================================================================
+   ABOUT PAGE — EDITORIAL STUDIO PROFILE
+   ========================================================================== */
+.about-view {
+  min-height: calc(100vh - var(--header-height));
+  padding-bottom: 5rem;
+}
+
+/* 1. Hero Split */
+.about-hero-block {
+  padding-top: clamp(2.5rem, 5vw, 4.5rem);
+  padding-bottom: clamp(3rem, 5vw, 4.5rem);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.about-hero-split {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: clamp(2.5rem, 5vw, 5rem);
+  align-items: flex-end;
+  margin-bottom: clamp(2.5rem, 4vw, 4rem);
+}
+
+.about-title {
+  margin-bottom: 0.25rem;
+}
+
+.about-hero-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.about-lead-statement {
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-weight: 300;
+  line-height: 1.45;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.about-sub-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+}
+
+.about-primary-media {
+  position: relative;
+  width: 100%;
+  background-color: var(--bg-card);
+  overflow: hidden;
+  border: 1px solid var(--border-hairline);
+}
+
+.about-primary-img {
+  width: 100%;
+  height: clamp(380px, 58vh, 680px);
+  object-fit: cover;
+  display: block;
+}
+
+.about-media-caption {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-hairline);
+  background-color: var(--bg-surface);
+}
+
+.caption-tag {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.caption-text {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Reusable Editorial Section Containers */
+.about-section {
+  padding: clamp(4rem, 7vw, 6.5rem) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.about-section-header {
+  margin-bottom: clamp(2rem, 4vw, 3.5rem);
+}
+
+.header-flex-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.section-num-label {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.editorial-section-heading {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.header-sub-tag {
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* 2. The Studio Intro (Two Column) */
+.about-two-col {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: clamp(2.5rem, 5vw, 5rem);
+}
+
+.studio-intro-lead {
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.studio-body-text {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+}
+
+/* 3. Who We Are (People & Studio Roster) */
+.people-editorial-layout {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: start;
+}
+
+.people-image-frame {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+}
+
+.people-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.people-image-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background-color: rgba(20, 20, 19, 0.75);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  backdrop-filter: blur(4px);
+}
+
+.people-image-caption {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 1rem;
+}
+
+.roster-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.roster-item {
+  padding: 1.75rem 1.5rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast);
+}
+
+.roster-item:hover {
+  transform: translateY(-3px);
+}
+
+.roster-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.roster-role {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.roster-tag {
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  padding: 0.15rem 0.45rem;
+  background-color: var(--bg-surface);
+}
+
+.roster-name-placeholder {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.roster-discipline {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+
+.roster-status-note {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-style: italic;
+  border-top: 1px dashed var(--border-hairline);
+  padding-top: 0.5rem;
+  display: block;
+}
+
+/* 4. What We Do (Minimal Disciplines List) */
+.disciplines-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.discipline-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 1rem;
+  border-bottom: 1px solid var(--border-hairline);
+  transition: background-color var(--transition-fast), padding var(--transition-fast);
+  cursor: default;
+}
+
+.discipline-row:hover {
+  background-color: var(--bg-card);
+  padding-left: 1.5rem;
+}
+
+.discipline-num {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--text-muted);
+}
+
+.discipline-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 2vw, 1.625rem);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.discipline-detail {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.discipline-arrow {
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+  text-align: right;
+}
+
+.discipline-row:hover .discipline-arrow {
+  color: var(--text-primary);
+  transform: translateX(6px);
+}
+
+/* 5. Our Approach (Single Strong Statement) */
+.approach-quote {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.approach-supporting-text {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-width: 680px;
+  margin-bottom: 2rem;
+}
+
+.approach-meta-note {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-left: 2px solid var(--border-dark);
+  padding-left: 1rem;
+}
+
+/* 6. Studio Facts (Archive Index) */
+.facts-index-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.fact-index-item {
+  padding: 1.75rem 1.5rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fact-index-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fact-index-val {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* 7. Atmosphere Image */
+.atmosphere-media-wrapper {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+}
+
+.atmosphere-image {
+  width: 100%;
+  height: clamp(350px, 52vh, 580px);
+  object-fit: cover;
+  display: block;
+}
+
+.atmosphere-caption {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-hairline);
+  background-color: var(--bg-surface);
+}
+
+/* 8. Closing CTA adjustments */
+.about-closing-cta {
+  border-bottom: none;
+}
+

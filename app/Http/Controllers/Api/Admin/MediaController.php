@@ -134,18 +134,21 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'files' => 'required|array|min:1',
-            'files.*' => 'required|file',
+            'files' => 'required_without:file|array|min:1',
+            'files.*' => 'file',
+            'file' => 'nullable|file',
             'project_id' => 'nullable|exists:projects,id',
             'media_type' => 'nullable|string|in:image,video,3d,document,blueprint',
         ]);
+
+        $files = $request->file('files') ?: ($request->hasFile('file') ? [$request->file('file')] : []);
 
         $uploadedRecords = [];
         $errors = [];
         $projectId = $request->input('project_id');
         $project = $projectId ? Project::find($projectId) : null;
 
-        foreach ($request->file('files') as $index => $file) {
+        foreach ($files as $index => $file) {
             $originalName = $file->getClientOriginalName();
             $extension = strtolower($file->getClientOriginalExtension());
             $realMime = $file->getMimeType();
@@ -256,6 +259,7 @@ class MediaController extends Controller
         return response()->json([
             'message' => count($uploadedRecords) . ' file(s) uploaded successfully.',
             'uploaded' => $uploadedRecords,
+            'media' => $uploadedRecords[0] ?? null,
             'errors' => $errors,
         ], count($uploadedRecords) > 0 ? 201 : 422);
     }

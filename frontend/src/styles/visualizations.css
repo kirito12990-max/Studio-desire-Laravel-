@@ -1,0 +1,1198 @@
+/* ==========================================================================
+   STUDIO DESIRE — 3D VISUAL EXPLORATION, SPACE RENDER CARDS, VR PORTAL, AND QR MODAL
+   ========================================================================== */
+
+/* ==========================================================================
+   02 — 3D VISUAL EXPLORATION GALLERY & QR/VR PORTALS
+   ========================================================================== */
+.threed-view {
+  min-height: calc(100vh - var(--header-height));
+  padding-bottom: 5rem;
+}
+
+.threed-spaces-container {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4rem, 8vw, 7rem);
+  margin-top: 3.5rem;
+}
+
+.render-space-block {
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.render-space-block:last-child {
+  border-bottom: none;
+}
+
+.space-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.space-title-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.space-tag-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.space-room-badge {
+  color: var(--text-primary);
+}
+
+.space-divider-dot {
+  color: var(--border-medium);
+}
+
+.space-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.space-counter-tag {
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  padding: 0.35rem 0.75rem;
+  background-color: var(--bg-surface);
+}
+
+/* Asymmetric 2-Column Space Layout */
+.space-layout-grid {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+.primary-render-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.primary-render-frame {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+
+.primary-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-slow);
+}
+
+.primary-render-frame:hover .primary-img {
+  transform: scale(1.02);
+}
+
+.render-overlay-badge {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+}
+
+.render-view-pill {
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: rgba(20, 20, 19, 0.75);
+  padding: 0.35rem 0.85rem;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.space-narrative {
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 680px;
+}
+
+/* Secondary Render Perspectives */
+.secondary-render-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.secondary-renders-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.secondary-render-frame {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+
+.secondary-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-smooth);
+}
+
+.secondary-render-frame:hover .secondary-img {
+  transform: scale(1.04);
+}
+
+.secondary-render-tag {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: rgba(20, 20, 19, 0.7);
+  padding: 0.2rem 0.5rem;
+  backdrop-filter: blur(2px);
+}
+
+/* VR Portal & QR Experience Panel */
+.vr-experience-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.vr-active-card {
+  padding: 2rem 1.75rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.vr-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vr-indicator-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.vr-eyebrow {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vr-card-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.vr-qr-frame {
+  background-color: #ffffff;
+  border: 1px solid var(--border-hairline);
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+  width: 190px;
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.qr-svg-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-svg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.qr-fallback-box {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.vr-instructions {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 280px;
+  margin-bottom: 1.25rem;
+}
+
+.vr-direct-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.vr-direct-link-btn:hover {
+  background-color: #333331;
+}
+
+.vr-pending-card {
+  padding: 2.25rem 1.75rem;
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-medium);
+  text-align: center;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vr-card-title.pending {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.vr-pending-note {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  max-width: 320px;
+}
+
+.vr-pending-badge {
+  font-size: 0.625rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  padding: 0.25rem 0.65rem;
+  background-color: var(--bg-surface);
+}
+
+.space-specs-card {
+  padding: 1.25rem 1.5rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+}
+
+.spec-name {
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.spec-val {
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  text-align: right;
+}
+
+/* Minimal Fullscreen Render Lightbox */
+.render-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--overlay-scrim-deep);
+  z-index: 350;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.render-lightbox-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+}
+
+.render-lightbox-info {
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #d4d0c7;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.render-lightbox-project {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.render-lightbox-sep {
+  color: var(--text-muted);
+}
+
+.render-lightbox-angle {
+  color: #a67c52;
+}
+
+.render-lightbox-counter-area {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.render-lightbox-counter {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.render-lightbox-close {
+  position: static;
+}
+
+.render-lightbox-image-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-width: 92vw;
+  margin: 0 auto;
+}
+
+.render-lightbox-img {
+  max-width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.render-lightbox-caption {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: #e6e3dc;
+  text-align: center;
+  max-width: 700px;
+  line-height: 1.5;
+}
+
+.render-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(20, 20, 19, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 50px;
+  height: 50px;
+  font-size: 2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.render-nav-arrow:hover {
+  background: rgba(20, 20, 19, 0.95);
+  border-color: #ffffff;
+}
+
+.render-nav-arrow.prev {
+  left: 2rem;
+}
+
+.render-nav-arrow.next {
+  right: 2rem;
+}
+
+/* Responsive adjustments for 3D page */
+@media (max-width: 1024px) {
+  .space-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .secondary-renders-grid {
+    grid-template-columns: 1fr;
+  }
+  .render-nav-arrow.prev {
+    left: 0.5rem;
+  }
+  .render-nav-arrow.next {
+    right: 0.5rem;
+  }
+  .space-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+   02 — 3D MULTI-VR / MULTI-QR SYSTEM EXTENSIONS
+   ========================================================================== */
+
+/* Project Navigation & Selector */
+.threed-project-nav-section {
+  padding: 1.5rem 0 2rem;
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: 2.5rem;
+}
+
+.threed-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.threed-nav-eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.threed-nav-count {
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.threed-project-tabs-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.threed-project-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.15rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.threed-project-tab-btn:hover {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+.threed-project-tab-btn.active {
+  background-color: var(--text-primary);
+  color: #ffffff;
+  border-color: var(--text-primary);
+}
+
+.threed-project-tab-btn.active .tab-badge,
+.threed-project-tab-btn.active .tab-index {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tab-index {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.tab-title {
+  font-weight: 500;
+}
+
+.tab-badge {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border-hairline);
+  padding-left: 0.5rem;
+}
+
+/* Category Filter Bar */
+.threed-category-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 3.5rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.25rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+
+.filter-bar-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.filter-pill-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.category-pill-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.category-pill-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hairline);
+}
+
+.category-pill-btn.active {
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border-color: var(--border-medium);
+  font-weight: 600;
+}
+
+/* Project Stream & Dossier Headers */
+.threed-projects-stream {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4rem, 8vw, 7rem);
+}
+
+.threed-project-group {
+  padding-bottom: clamp(3rem, 6vw, 5rem);
+  border-bottom: 2px solid var(--border-hairline);
+}
+
+.threed-project-group:last-child {
+  border-bottom: none;
+}
+
+.threed-project-dossier-header {
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: 2.5rem;
+}
+
+.project-dossier-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.dossier-index {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.dossier-divider {
+  color: var(--border-medium);
+}
+
+.project-dossier-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.project-dossier-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.project-vr-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.35rem 0.85rem;
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.project-vr-indicator .pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+}
+
+.project-dossier-description {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 820px;
+}
+
+/* ==========================================================================
+   LEVEL 1: CENTRAL PROJECT-WIDE VR PORTAL
+   ========================================================================== */
+.central-vr-portal-container {
+  margin-bottom: 3.5rem;
+}
+
+.central-vr-portal-card {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  padding: clamp(2rem, 4vw, 3.5rem);
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+}
+
+.central-vr-info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.central-vr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.central-vr-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.central-vr-badge-text {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.central-vr-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  line-height: 1.2;
+}
+
+.central-vr-statement {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.central-vr-subcontext {
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border-hairline);
+}
+
+.central-vr-sublabel {
+  display: block;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.central-vr-subtext {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.central-vr-action-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.central-vr-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1rem 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.central-vr-launch-btn:hover {
+  background-color: #333331;
+  transform: translateY(-1px);
+}
+
+/* Central QR Scannable Frame */
+.central-vr-qr-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.central-vr-qr-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.75rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+
+.central-vr-qr-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--text-primary);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.central-vr-qr-corner.top-left {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+
+.central-vr-qr-corner.top-right {
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+
+.central-vr-qr-corner.bottom-left {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 2px 2px;
+}
+
+.central-vr-qr-corner.bottom-right {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+
+.central-vr-qr-box {
+  width: 200px;
+  height: 200px;
+  background-color: #ffffff;
+  padding: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.central-vr-qr-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.central-vr-qr-caption {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ==========================================================================
+   LEVEL 3: INDIVIDUAL RENDER VR CONTEXT STRIP
+   ========================================================================== */
+.secondary-render-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.render-vr-context-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-top: none;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.render-vr-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.render-vr-pulse-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #22c55e;
+}
+
+.render-vr-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.render-vr-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.render-vr-scan-btn {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background-color: transparent;
+  border: 1px solid var(--border-hairline);
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.render-vr-scan-btn:hover {
+  background-color: var(--bg-card);
+  border-color: var(--border-medium);
+}
+
+.render-vr-open-link {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  padding: 0.25rem 0.55rem;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.render-vr-open-link:hover {
+  background-color: #333331;
+}
+
+/* ==========================================================================
+   LEVEL 3: RENDER QR CODE MODAL
+   ========================================================================== */
+.render-qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background-color: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.render-qr-modal-dialog {
+  width: 100%;
+  max-width: 440px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.render-qr-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.render-qr-modal-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.render-qr-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+.render-qr-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.render-qr-modal-body {
+  padding: 2rem 2rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.render-qr-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.render-qr-modal-badge .qr-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #22c55e;
+}
+
+.render-qr-modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.render-qr-code-frame {
+  width: 200px;
+  height: 200px;
+  background-color: #ffffff;
+  padding: 0.85rem;
+  border: 1px solid var(--border-hairline);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.render-qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.render-qr-modal-note {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.75rem;
+  max-width: 320px;
+}
+
+.render-qr-modal-direct-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.render-qr-modal-direct-btn:hover {
+  background-color: #333331;
+}
+
+/* Lightbox VR Button */
+.render-lightbox-vr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background-color: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  padding: 0.35rem 0.75rem;
+  text-decoration: none;
+  margin-right: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.render-lightbox-vr-btn:hover {
+  background-color: rgba(34, 197, 94, 0.4);
+}
+
+/* Room without VR cleanup */
+.vr-experience-panel.room-no-vr {
+  margin-top: 0;
+}
+
+/* Responsive adjustments for 3D multi-VR */
+@media (max-width: 900px) {
+  .central-vr-portal-card {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding: 2rem;
+  }
+}
+

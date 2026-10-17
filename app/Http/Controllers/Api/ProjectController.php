@@ -180,7 +180,10 @@ class ProjectController extends Controller
             ], 404);
         }
 
-        return response()->json($this->formatProjectDetail($project));
+        $detail = $this->formatProjectDetail($project);
+        return response()->json(array_merge($detail, [
+            'project' => $detail,
+        ]));
     }
 
     /**
