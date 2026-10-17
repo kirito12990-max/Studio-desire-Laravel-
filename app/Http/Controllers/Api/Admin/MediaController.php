@@ -189,7 +189,9 @@ class MediaController extends Controller
 
             // 5. Store file using Laravel Storage abstraction
             $path = $file->storeAs($relativeDir, $safeFilename, 'public');
-            $publicUrl = Storage::disk('public')->url($path);
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $publicDisk */
+            $publicDisk = Storage::disk('public');
+            $publicUrl = $publicDisk->url($path);
 
             // 6. Extract image dimensions if image
             $dimensions = null;
