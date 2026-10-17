@@ -1,0 +1,50 @@
+# Environment & Sensitive Credentials
+.env
+.env.*
+!.env.example
+.env.backup
+.env.production
+auth.json
+
+# Local Database Files & Dumps
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db
+*.sql
+*.sql.gz
+/storage/backups/
+/storage/dumps/
+
+# Sensitive & Confidential Uploads
+/storage/app/private/
+/storage/app/enquiry_attachments/
+/storage/*.key
+/storage/pail
+
+# Application & Framework Generated Assets
+*.log
+.phpunit.result.cache
+/.phpunit.cache
+/public/build
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+
+# Dependencies
+/vendor
+/node_modules
+
+# IDE & Editor Specific
+.DS_Store
+Thumbs.db
+.phpactor.json
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.vscode
+/.zed
+_ide_helper.php
+Homestead.json
+Homestead.yaml
