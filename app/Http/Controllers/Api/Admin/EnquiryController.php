@@ -8,6 +8,7 @@ use App\Models\EnquiryAttachment;
 use App\Models\PortfolioCategory;
 use App\Models\Project;
 use App\Models\ProjectEnquiry;
+use App\Services\EnquiryNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class EnquiryController extends Controller
 {
+    public function __construct(
+        protected EnquiryNotificationService $notificationService = new EnquiryNotificationService()
+    ) {}
+
     /**
      * Allowed lifecycle statuses for Studio Desire enquiries.
      */
@@ -41,7 +46,7 @@ class EnquiryController extends Controller
         $query = ProjectEnquiry::with(['attachments', 'client', 'convertedProject', 'originatingProject'])
             ->orderBy('created_at', 'desc');
 
-        // Search text across name, email, phone, reference_number, message, location
+        // Search text across name, email, phone, reference_number, message, location, subject
         if ($request->filled('q') || $request->filled('search')) {
             $search = '%' . trim($request->input('q') ?: $request->input('search')) . '%';
             $query->where(function ($q) use ($search) {
@@ -49,6 +54,7 @@ class EnquiryController extends Controller
                   ->orWhere('email', 'like', $search)
                   ->orWhere('phone', 'like', $search)
                   ->orWhere('reference_number', 'like', $search)
+                  ->orWhere('subject', 'like', $search)
                   ->orWhere('location', 'like', $search)
                   ->orWhere('message', 'like', $search);
             });
@@ -57,6 +63,11 @@ class EnquiryController extends Controller
         // Filter by status
         if ($request->filled('status') && strtoupper($request->input('status')) !== 'ALL') {
             $query->where('status', strtoupper($request->input('status')));
+        }
+
+        // Filter by source (e.g. contact_form vs website)
+        if ($request->filled('source') && strtoupper($request->input('source')) !== 'ALL') {
+            $query->where('source', $request->input('source'));
         }
 
         // Filter by project_type
@@ -75,9 +86,41 @@ class EnquiryController extends Controller
         $perPage = min((int) $request->input('per_page', 20), 100);
         $enquiries = $query->paginate($perPage);
 
+        $items = collect($enquiries->items())->map(function (ProjectEnquiry $e) {
+            $attCount = $e->attachments->count();
+            return [
+                'id' => $e->id,
+                'reference_number' => $e->reference_number,
+                'name' => $e->name,
+                'email' => $e->email,
+                'phone' => $e->phone ?: '',
+                'subject' => $e->subject ?: $e->project_type,
+                'project_type' => $e->project_type,
+                'location' => $e->location,
+                'budget' => $e->budget,
+                'timeline' => $e->timeline,
+                'message' => $e->message,
+                'source' => $e->source,
+                'source_page' => $e->source_page,
+                'status' => $e->status,
+                'internal_notes' => $e->internal_notes,
+                'email_sent' => (bool) $e->email_sent,
+                'email_sent_at' => $e->email_sent_at?->toIso8601String(),
+                'email_error' => $e->email_error,
+                'attachments_count' => $attCount,
+                'attachment_count' => $attCount,
+                'converted_project_id' => $e->converted_project_id,
+                'converted_client_id' => $e->client_id,
+                'client_id' => $e->client_id,
+                'created_at' => $e->created_at?->toIso8601String(),
+                'updated_at' => $e->updated_at?->toIso8601String(),
+            ];
+        });
+
         return response()->json(array_merge($enquiries->toArray(), [
             'total' => $enquiries->total(),
-            'enquiries' => $enquiries->items(),
+            'enquiries' => $items,
+            'items' => $items,
         ]));
     }
 
@@ -89,12 +132,15 @@ class EnquiryController extends Controller
         $enquiry = ProjectEnquiry::with(['attachments', 'client', 'convertedProject', 'originatingProject'])
             ->findOrFail($id);
 
+        $attCount = $enquiry->attachments->count();
+
         $data = [
             'id' => $enquiry->id,
             'reference_number' => $enquiry->reference_number,
             'name' => $enquiry->name,
             'email' => $enquiry->email,
             'phone' => $enquiry->phone,
+            'subject' => $enquiry->subject ?: $enquiry->project_type,
             'project_type' => $enquiry->project_type,
             'location' => $enquiry->location,
             'budget' => $enquiry->budget,
@@ -105,6 +151,11 @@ class EnquiryController extends Controller
             'status' => $enquiry->status,
             'internal_notes' => $enquiry->internal_notes,
             'status_history' => $enquiry->status_history ?: [],
+            'email_sent' => (bool) $enquiry->email_sent,
+            'email_sent_at' => $enquiry->email_sent_at?->toIso8601String(),
+            'email_error' => $enquiry->email_error,
+            'attachments_count' => $attCount,
+            'attachment_count' => $attCount,
             'client_id' => $enquiry->client_id,
             'client' => $enquiry->client,
             'converted_project_id' => $enquiry->converted_project_id,
@@ -192,8 +243,13 @@ class EnquiryController extends Controller
     }
 
     /**
-     * Convert an enquiry into a draft project.
-     * Transactional, prevents duplicate conversion, never publishes automatically.
+     * Convert an enquiry into an unpublished draft project.
+     * Strictly protects client confidentiality:
+     * - Defaults title to 'Untitled project' (never leaks client name into public title or slug)
+     * - Leaves public description empty (never copies enquiry reference or client notes)
+     * - Leaves public location empty (never defaults to Jaipur or copies private client location)
+     * - Strictly creates as unpublished draft (publishing_status='draft', is_published=false)
+     * - Preserves enquiry reference only as private internal association
      */
     public function convertToProject(Request $request, int $id): JsonResponse
     {
@@ -217,7 +273,7 @@ class EnquiryController extends Controller
         ]);
 
         $project = DB::transaction(function () use ($enquiry, $validated, $request) {
-            // 1. Resolve or establish client record
+            // 1. Resolve or establish private internal client record
             $clientId = $validated['client_id'] ?? $enquiry->client_id;
             if (!$clientId && !empty($enquiry->email)) {
                 $existingClient = Client::where('email', $enquiry->email)->first();
@@ -241,32 +297,41 @@ class EnquiryController extends Controller
                 ? PortfolioCategory::find($validated['category_id'])
                 : PortfolioCategory::first();
 
-            // 3. Formulate project title (deliberate choice, not leaking private data)
+            // 3. Strict privacy: Default title to 'Untitled project', never client name
             $projectTitle = !empty(trim($validated['title'] ?? ''))
                 ? trim($validated['title'])
-                : ($enquiry->name . ' Residence');
+                : 'Untitled project';
 
-            // 4. Instantiate DRAFT project (STRICTLY is_published = false)
+            // 4. Strict privacy: Default public location and description to null
+            $projectLocation = !empty(trim($validated['location'] ?? ''))
+                ? trim($validated['location'])
+                : null;
+
+            $projectDescription = !empty(trim($validated['description'] ?? ''))
+                ? trim($validated['description'])
+                : null;
+
+            // 5. Instantiate strictly DRAFT project (NEVER publish automatically)
             $newProject = Project::create([
                 'title' => $projectTitle,
                 'category_id' => $category?->id ?? 1,
                 'category' => $category?->name ?? 'Architecture',
                 'client_id' => $clientId,
-                'location' => $validated['location'] ?? $enquiry->location ?? 'Jaipur',
-                'project_type' => $enquiry->project_type ?? 'Private Residence',
-                'description' => $validated['description'] ?? "Architectural project originating from enquiry {$enquiry->reference_number}.",
+                'location' => $projectLocation,
+                'project_type' => $enquiry->project_type ?: 'Architecture',
+                'description' => $projectDescription,
                 'publishing_status' => 'draft',
-                'is_published' => false, // NEVER publish automatically
+                'is_published' => false,
                 'featured' => false,
             ]);
 
-            // 5. Update enquiry status and reference to converted project
+            // 6. Update enquiry status and private internal reference to converted project
             $enquiry->converted_project_id = $newProject->id;
             $actor = $request->user()?->name ?: 'Owner';
             $enquiry->recordStatusChange(
                 'CONVERTED',
                 $actor,
-                "Converted into draft project #{$newProject->id} ({$newProject->title})."
+                "Converted into draft project #{$newProject->id}."
             );
 
             return $newProject;
@@ -285,6 +350,26 @@ class EnquiryController extends Controller
                 'client_id' => $project->client_id,
             ],
         ], 201);
+    }
+
+    /**
+     * Retry sending owner email alert for a specific enquiry.
+     */
+    public function retryEmail(int $id): JsonResponse
+    {
+        $enquiry = ProjectEnquiry::findOrFail($id);
+
+        $sent = $this->notificationService->notifyOwner($enquiry, force: true);
+
+        return response()->json([
+            'success' => $sent,
+            'message' => $sent
+                ? "Notification email for enquiry {$enquiry->reference_number} successfully sent."
+                : "Failed to dispatch email notification: " . ($enquiry->fresh()->email_error ?: 'Unknown mail transport error.'),
+            'email_sent' => $sent,
+            'email_error' => $enquiry->fresh()->email_error,
+            'enquiry' => $enquiry->fresh(),
+        ], $sent ? 200 : 502);
     }
 
     /**
@@ -312,8 +397,10 @@ class EnquiryController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Enquiry linked to existing client profile '{$client->name}' ({$client->email}).",
+                'message' => "Enquiry linked to existing client record: {$client->name}.",
+                'client_id' => $client->id,
                 'client' => $client,
+                'created_new' => false,
             ]);
         }
 
@@ -323,7 +410,8 @@ class EnquiryController extends Controller
             'email' => $enquiry->email,
             'phone' => $enquiry->phone,
             'company' => $validated['company'] ?? null,
-            'notes' => $validated['notes'] ?? "Client created from enquiry {$enquiry->reference_number}.",
+            'address' => $enquiry->location,
+            'notes' => $validated['notes'] ?? "Client originated from enquiry {$enquiry->reference_number}.",
             'status' => 'ACTIVE',
         ]);
 
@@ -332,33 +420,39 @@ class EnquiryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "New client profile established for '{$client->name}'.",
+            'message' => "New client record created and linked: {$client->name}.",
+            'client_id' => $client->id,
             'client' => $client,
+            'created_new' => true,
         ], 201);
     }
 
     /**
-     * Safely download confidential client proposal attachment.
+     * Stream or download confidential attachment with strict owner authentication.
      */
-    public function downloadAttachment(int $enquiryId, int $attachmentId): BinaryFileResponse|JsonResponse
+    public function downloadAttachment(int $id, int $attachmentId): BinaryFileResponse|JsonResponse
     {
-        $enquiry = ProjectEnquiry::findOrFail($enquiryId);
+        $enquiry = ProjectEnquiry::findOrFail($id);
         $attachment = EnquiryAttachment::where('enquiry_id', $enquiry->id)
             ->where('id', $attachmentId)
             ->firstOrFail();
 
-        $path = $attachment->storage_path;
-
-        if (!$path || !Storage::disk('local')->exists($path)) {
+        if (!Storage::disk('local')->exists($attachment->storage_path)) {
             return response()->json([
-                'message' => 'Attachment file not found on private storage.',
+                'message' => 'Requested file is no longer available on private storage.',
             ], 404);
         }
 
+        $fullPath = Storage::disk('local')->path($attachment->storage_path);
+
         return response()->download(
-            Storage::disk('local')->path($path),
+            $fullPath,
             $attachment->original_filename,
-            ['X-Content-Type-Options' => 'nosniff']
+            [
+                'Content-Type' => $attachment->mime_type ?: 'application/octet-stream',
+                'Cache-Control' => 'no-store, private',
+                'X-Content-Type-Options' => 'nosniff',
+            ]
         );
     }
 }

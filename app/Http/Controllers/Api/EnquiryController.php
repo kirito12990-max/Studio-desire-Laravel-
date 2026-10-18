@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ContactInquiry;
 use App\Models\EnquiryAttachment;
 use App\Models\ProjectEnquiry;
+use App\Services\EnquiryNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,6 +14,10 @@ use Illuminate\Support\Str;
 
 class EnquiryController extends Controller
 {
+    public function __construct(
+        protected EnquiryNotificationService $notificationService = new EnquiryNotificationService()
+    ) {}
+
     /**
      * Return public enquiry form configuration (services, budget ranges, timelines).
      */
@@ -107,6 +112,7 @@ class EnquiryController extends Controller
                     'name' => trim($validated['name']),
                     'email' => strtolower(trim($validated['email'])),
                     'phone' => isset($validated['phone']) ? trim($validated['phone']) : null,
+                    'subject' => $projectType,
                     'project_type' => $projectType,
                     'location' => $validated['location'] ?? null,
                     'budget' => $validated['budget'] ?? null,
@@ -120,6 +126,7 @@ class EnquiryController extends Controller
                     'converted_project_id' => null,
                     'ip_address' => $ip,
                     'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                    'email_sent' => false,
                 ]);
             } catch (\Illuminate\Database\QueryException $e) {
                 if ($attempt >= $maxAttempts) {
@@ -155,20 +162,25 @@ class EnquiryController extends Controller
             ]);
         }
 
+        // 6. Asynchronously or synchronously dispatch owner notification email
+        $this->notificationService->notifyOwner($enquiry);
+
         return response()->json([
             'success' => true,
             'message' => 'Thank you for reaching out to Studio Desire. Your architectural enquiry has been received.',
             'reference_number' => $enquiry->reference_number,
             'enquiry_id' => $enquiry->id,
+            'email_sent' => (bool) $enquiry->fresh()->email_sent,
         ], 201);
     }
 
     /**
      * Submit a general contact form message.
+     * Records into unified enquiry inbox with source='contact_form' and dispatches owner email alert.
      */
     public function contact(Request $request): JsonResponse
     {
-        if ($request->filled('_honey')) {
+        if ($request->filled('_honey') || $request->filled('website_url')) {
             return response()->json([
                 'success' => true,
                 'message' => 'Message received.',
@@ -196,19 +208,66 @@ class EnquiryController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
-        ContactInquiry::create([
+        $subject = !empty(trim($validated['subject'] ?? '')) ? trim($validated['subject']) : 'General Contact';
+
+        // 1. Maintain backward-compatible contact_inquiries record
+        $contactInquiry = ContactInquiry::create([
             'name' => trim($validated['name']),
             'email' => strtolower(trim($validated['email'])),
             'phone' => $validated['phone'] ?? null,
-            'subject' => $validated['subject'] ?? 'General Contact',
+            'subject' => $subject,
             'message' => trim($validated['message']),
             'status' => 'NEW',
             'ip_address' => $ip,
         ]);
 
+        // 2. Unify into main owner enquiry inbox
+        $maxAttempts = 3;
+        $attempt = 0;
+        $enquiry = null;
+
+        while ($attempt < $maxAttempts && !$enquiry) {
+            $attempt++;
+            try {
+                $enquiry = ProjectEnquiry::create([
+                    'reference_number' => ProjectEnquiry::generateUniqueReference(),
+                    'name' => trim($validated['name']),
+                    'email' => strtolower(trim($validated['email'])),
+                    'phone' => $validated['phone'] ?? null,
+                    'subject' => $subject,
+                    'project_type' => $subject,
+                    'location' => null,
+                    'budget' => null,
+                    'timeline' => null,
+                    'message' => trim($validated['message']),
+                    'source' => 'contact_form',
+                    'source_page' => '/contact',
+                    'status' => 'NEW',
+                    'internal_notes' => null,
+                    'converted_project_id' => null,
+                    'ip_address' => $ip,
+                    'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                    'email_sent' => false,
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($attempt >= $maxAttempts) {
+                    // Even if project_enquiries unique constraint retries fail, contactInquiry was saved
+                    break;
+                }
+            }
+        }
+
+        // 3. Dispatch owner notification email
+        if ($enquiry) {
+            $this->notificationService->notifyOwner($enquiry);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Thank you for contacting Studio Desire. Your message has been delivered.',
+            'reference_number' => $enquiry?->reference_number,
+            'enquiry_id' => $enquiry?->id ?: $contactInquiry->id,
+            'email_sent' => $enquiry ? (bool) $enquiry->fresh()->email_sent : false,
         ], 201);
     }
 }

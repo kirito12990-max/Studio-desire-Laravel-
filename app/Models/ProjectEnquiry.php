@@ -19,6 +19,7 @@ class ProjectEnquiry extends Model
         'name',
         'email',
         'phone',
+        'subject',
         'project_type',
         'location',
         'budget',
@@ -34,12 +35,17 @@ class ProjectEnquiry extends Model
         'converted_project_id',
         'ip_address',
         'user_agent',
+        'email_sent',
+        'email_sent_at',
+        'email_error',
     ];
 
     protected function casts(): array
     {
         return [
             'status_history' => 'array',
+            'email_sent' => 'boolean',
+            'email_sent_at' => 'datetime',
         ];
     }
 

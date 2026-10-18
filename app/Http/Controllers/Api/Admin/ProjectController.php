@@ -213,6 +213,17 @@ class ProjectController extends Controller
             $validated['category'] = $category?->name ?? $project->category;
         }
 
+        if (isset($validated['title']) && empty($validated['slug']) && str_starts_with($project->slug, 'untitled-project')) {
+            $baseSlug = Str::slug($validated['title']);
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Project::where('slug', $slug)->where('id', '!=', $project->id)->exists()) {
+                $slug = "{$baseSlug}-{$counter}";
+                $counter++;
+            }
+            $validated['slug'] = $slug;
+        }
+
         if (isset($validated['publishing_status']) && $validated['publishing_status'] === 'published') {
             $coverImage = $validated['cover_image'] ?? $project->cover_image;
             if (empty($coverImage)) {

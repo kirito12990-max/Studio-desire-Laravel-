@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController
 use App\Http\Controllers\Api\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Api\Admin\ContentController as AdminContentController;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\EmailController as AdminEmailController;
 use App\Http\Controllers\Api\Admin\EnquiryController as AdminEnquiryController;
 use App\Http\Controllers\Api\Admin\FeaturedController as AdminFeaturedController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
@@ -123,7 +124,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/enquiries/{id}', [AdminEnquiryController::class, 'destroy']);
         Route::post('/enquiries/{id}/convert-to-project', [AdminEnquiryController::class, 'convertToProject']);
         Route::post('/enquiries/{id}/convert-to-client', [AdminEnquiryController::class, 'convertToClient']);
+        Route::post('/enquiries/{id}/retry-email', [AdminEnquiryController::class, 'retryEmail']);
         Route::get('/enquiries/{id}/attachments/{attachmentId}', [AdminEnquiryController::class, 'downloadAttachment']);
+
+        // Email Notification Settings & Diagnostics
+        Route::get('/email/settings', [AdminEmailController::class, 'getSettings']);
+        Route::post('/email/test', [AdminEmailController::class, 'testEmail']);
 
         // Lightweight Client Relationship Management
         Route::get('/clients', [AdminClientController::class, 'index']);
