@@ -276,12 +276,15 @@ class MediaController extends Controller
             $relativeDir = 'media/' . date('Y/m');
 
             // 6. Store file using Laravel Storage abstraction
-            $path = $file->storeAs($relativeDir, $safeFilename, 'public');
-            $canonicalUrl = '/storage/' . ltrim($path, '/');
+            $mediaDisk = config('filesystems.media_disk', 'public');
+            $path = $file->storeAs($relativeDir, $safeFilename, $mediaDisk);
+            $canonicalUrl = ($mediaDisk === 'public')
+                ? ('/storage/' . ltrim($path, '/'))
+                : Storage::disk($mediaDisk)->url($path);
 
             // 7. Generate optimized thumbnail for grid previews (preserving original full-size)
             $thumbnailUrl = $canonicalUrl;
-            if ($detectedType === 'image') {
+            if ($detectedType === 'image' && $mediaDisk === 'public') {
                 $generatedThumb = $this->thumbnailService->generateThumbnail(
                     Storage::disk('public')->path($path),
                     'thumbnails/' . date('Y/m')
@@ -539,11 +542,12 @@ class MediaController extends Controller
         });
 
         // Safely remove original file from storage
+        $mediaDisk = config('filesystems.media_disk', 'public');
         if ($media->url) {
             $parsed = parse_url($media->url, PHP_URL_PATH);
             $relativePath = preg_replace('#^/storage/#', '', $parsed);
-            if ($relativePath && Storage::disk('public')->exists($relativePath)) {
-                Storage::disk('public')->delete($relativePath);
+            if ($relativePath && Storage::disk($mediaDisk)->exists($relativePath)) {
+                Storage::disk($mediaDisk)->delete($relativePath);
             }
         }
 

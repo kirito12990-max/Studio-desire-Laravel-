@@ -60,7 +60,35 @@ return [
             'report' => false,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Supabase S3-Compatible Storage Disk
+        |--------------------------------------------------------------------------
+        | Endpoint: https://<project-ref>.supabase.co/storage/v1/s3
+        */
+        'supabase' => [
+            'driver' => 's3',
+            'key' => env('SUPABASE_STORAGE_KEY', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('SUPABASE_STORAGE_SECRET', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('SUPABASE_STORAGE_REGION', env('AWS_DEFAULT_REGION', 'us-east-1')),
+            'bucket' => env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'studio-desire-public')),
+            'url' => env('SUPABASE_STORAGE_URL', env('AWS_URL')),
+            'endpoint' => env('SUPABASE_STORAGE_ENDPOINT', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => env('SUPABASE_STORAGE_PATH_STYLE', true),
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logical Disks for Studio Desire Media and Confidential Attachments
+    |--------------------------------------------------------------------------
+    */
+    'media_disk' => env('MEDIA_DISK', 'public'),
+    'attachments_disk' => env('ATTACHMENTS_DISK', 'local'),
 
     /*
     |--------------------------------------------------------------------------

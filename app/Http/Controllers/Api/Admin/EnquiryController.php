@@ -247,7 +247,8 @@ class EnquiryController extends Controller
         });
 
         // 2. Remove physical private files from storage ONLY if no other records reference them
-        $localDisk = Storage::disk('local');
+        $attachmentsDisk = config('filesystems.attachments_disk', 'local');
+        $localDisk = Storage::disk($attachmentsDisk);
         foreach ($attachmentPaths as $item) {
             $path = $item['path'];
             $otherReferences = EnquiryAttachment::where('storage_path', $path)->exists();
@@ -462,13 +463,14 @@ class EnquiryController extends Controller
             ->where('id', $attachmentId)
             ->firstOrFail();
 
-        if (!Storage::disk('local')->exists($attachment->storage_path)) {
+        $attachmentsDisk = config('filesystems.attachments_disk', 'local');
+        if (!Storage::disk($attachmentsDisk)->exists($attachment->storage_path)) {
             return response()->json([
                 'message' => 'Requested file is no longer available on private storage.',
             ], 404);
         }
 
-        $fullPath = Storage::disk('local')->path($attachment->storage_path);
+        $fullPath = Storage::disk($attachmentsDisk)->path($attachment->storage_path);
 
         return response()->download(
             $fullPath,

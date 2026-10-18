@@ -10,10 +10,13 @@ auth.json
 *.sqlite
 *.sqlite3
 *.sqlite-journal
+*.sqlite.bak*
 *.db
 *.sql
 *.sql.gz
+*.bak
 /storage/backups/
+/storage/app/backups/
 /storage/dumps/
 
 # Sensitive & Confidential Uploads
