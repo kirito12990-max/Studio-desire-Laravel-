@@ -127,9 +127,31 @@ class ProjectController extends Controller
         $category = PortfolioCategory::find($validated['category_id']);
         $validated['category'] = $category?->name ?? 'Architecture';
 
-        // Auto-slug generation if empty
-        if (empty($validated['slug'])) {
-            $baseSlug = Str::slug($validated['title']);
+        // Safe optional year handling (handles null, empty string, or integers safely)
+        if (array_key_exists('year', $validated)) {
+            $validated['year'] = ($validated['year'] !== null && $validated['year'] !== '' && $validated['year'] !== 'null')
+                ? (int) $validated['year']
+                : null;
+        }
+
+        // Custom slug normalization and uniqueness validation on create
+        if (!empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['slug']);
+            if (empty($validated['slug'])) {
+                return response()->json([
+                    'message' => 'The provided slug is invalid.',
+                    'errors' => ['slug' => ['The slug format is invalid.']],
+                ], 422);
+            }
+            if (Project::where('slug', $validated['slug'])->exists()) {
+                return response()->json([
+                    'message' => 'The slug has already been taken.',
+                    'errors' => ['slug' => ['The slug has already been taken.']],
+                ], 422);
+            }
+        } else {
+            // Auto-slug generation from title
+            $baseSlug = Str::slug($validated['title']) ?: 'project';
             $slug = $baseSlug;
             $counter = 1;
             while (Project::where('slug', $slug)->exists()) {
@@ -186,7 +208,7 @@ class ProjectController extends Controller
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'slug' => "sometimes|required|string|max:255|unique:projects,slug,{$project->id}",
+            'slug' => 'nullable|string|max:255',
             'category_id' => 'sometimes|required|exists:portfolio_categories,id',
             'subcategory_id' => 'nullable|exists:portfolio_subcategories,id',
             'client_id' => 'nullable|exists:clients,id',
@@ -208,12 +230,35 @@ class ProjectController extends Controller
             'canonical_url' => 'nullable|string|max:1000',
         ]);
 
+        // Safe optional year handling
+        if (array_key_exists('year', $validated)) {
+            $validated['year'] = ($validated['year'] !== null && $validated['year'] !== '' && $validated['year'] !== 'null')
+                ? (int) $validated['year']
+                : null;
+        }
+
         if (isset($validated['category_id'])) {
             $category = PortfolioCategory::find($validated['category_id']);
             $validated['category'] = $category?->name ?? $project->category;
         }
 
-        if (isset($validated['title']) && empty($validated['slug']) && str_starts_with($project->slug, 'untitled-project')) {
+        // Custom slug normalization and uniqueness validation on update
+        if (array_key_exists('slug', $validated) && !empty($validated['slug'])) {
+            $normalizedSlug = Str::slug($validated['slug']);
+            if (empty($normalizedSlug)) {
+                return response()->json([
+                    'message' => 'The project slug cannot be empty or invalid.',
+                    'errors' => ['slug' => ['The slug format is invalid.']],
+                ], 422);
+            }
+            if (Project::where('slug', $normalizedSlug)->where('id', '!=', $project->id)->exists()) {
+                return response()->json([
+                    'message' => 'The slug has already been taken.',
+                    'errors' => ['slug' => ['The slug has already been taken.']],
+                ], 422);
+            }
+            $validated['slug'] = $normalizedSlug;
+        } elseif (isset($validated['title']) && empty($validated['slug']) && str_starts_with($project->slug, 'untitled-project')) {
             $baseSlug = Str::slug($validated['title']);
             $slug = $baseSlug;
             $counter = 1;

@@ -58,6 +58,7 @@ class Project extends Model
     protected static function booted(): void
     {
         static::saving(function (Project $project) {
+            // Slug generation and normalization
             if (empty($project->slug) && !empty($project->title)) {
                 $baseSlug = Str::slug($project->title);
                 $slug = $baseSlug;
@@ -67,22 +68,52 @@ class Project extends Model
                     $counter++;
                 }
                 $project->slug = $slug;
+            } elseif (!empty($project->slug)) {
+                $project->slug = Str::slug($project->slug);
             }
 
-            // Keep publishing_status and is_published consistently aligned
+            // Sync category text column with canonical category relationship
+            if ($project->category_id && ($project->isDirty('category_id') || empty($project->category))) {
+                $cat = PortfolioCategory::find($project->category_id);
+                if ($cat) {
+                    $project->category = $cat->name;
+                }
+            }
+
+            // publishing_status is the canonical single source of truth
             if (!empty($project->publishing_status)) {
-                $project->is_published = ($project->publishing_status === 'published');
-            } elseif ($project->is_published) {
-                $project->publishing_status = 'published';
+                $project->attributes['is_published'] = ($project->publishing_status === 'published');
+            } elseif (isset($project->attributes['is_published'])) {
+                $project->publishing_status = $project->attributes['is_published'] ? 'published' : 'draft';
             } else {
-                $project->publishing_status = $project->publishing_status ?: 'draft';
+                $project->publishing_status = 'draft';
+                $project->attributes['is_published'] = false;
             }
         });
     }
 
+    /**
+     * Canonical published query scope strictly driven by publishing_status.
+     */
     public function scopePublished($query)
     {
-        return $query->where('is_published', true)->where('publishing_status', 'published');
+        return $query->where('publishing_status', 'published');
+    }
+
+    public function getIsPublishedAttribute(): bool
+    {
+        return ($this->attributes['publishing_status'] ?? 'draft') === 'published';
+    }
+
+    public function setIsPublishedAttribute($value): void
+    {
+        $boolVal = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        $this->attributes['is_published'] = $boolVal;
+        if ($boolVal) {
+            $this->attributes['publishing_status'] = 'published';
+        } elseif (($this->attributes['publishing_status'] ?? '') === 'published') {
+            $this->attributes['publishing_status'] = 'draft';
+        }
     }
 
     public function scopeDraft($query)

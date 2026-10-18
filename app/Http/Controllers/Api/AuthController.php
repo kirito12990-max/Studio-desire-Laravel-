@@ -83,8 +83,11 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        // Generate Sanctum access token for API/mobile clients
-        $token = $user->createToken('owner-session')->plainTextToken;
+        // Prune stale session tokens for this user before issuing a new one
+        $user->tokens()->where('name', 'owner-session')->delete();
+
+        // Generate Sanctum access token with 24-hour expiration for API/mobile clients
+        $token = $user->createToken('owner-session', ['*'], now()->addMinutes(1440))->plainTextToken;
 
         Log::info('Successful owner login', [
             'user_id' => $user->id,

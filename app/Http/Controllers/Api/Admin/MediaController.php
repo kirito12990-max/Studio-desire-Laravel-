@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FeaturedItem;
 use App\Models\Media;
 use App\Models\PortfolioCategory;
 use App\Models\Project;
 use App\Models\ProjectMedia;
+use App\Services\ImageThumbnailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -26,13 +29,49 @@ class MediaController extends Controller
     ];
 
     /**
-     * Allowed file extensions and corresponding MIME groups.
+     * Explicitly supported image MIME types and safe extensions.
+     */
+    protected const ALLOWED_IMAGE_MIMES = [
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/png'  => ['png'],
+        'image/webp' => ['webp'],
+        'image/avif' => ['avif'],
+        'image/gif'  => ['gif'],
+    ];
+
+    /**
+     * Explicitly supported video MIME types.
+     */
+    protected const ALLOWED_VIDEO_MIMES = [
+        'video/mp4' => ['mp4'],
+        'video/quicktime' => ['mov'],
+        'video/webm' => ['webm'],
+    ];
+
+    /**
+     * Explicitly supported document and blueprint MIME types.
+     */
+    protected const ALLOWED_DOCUMENT_MIMES = [
+        'application/pdf' => ['pdf'],
+        'image/vnd.dwg' => ['dwg'],
+        'application/acad' => ['dwg'],
+        'application/x-dwg' => ['dwg'],
+        'application/dxf' => ['dxf'],
+        'image/vnd.dxf' => ['dxf'],
+    ];
+
+    /**
+     * Allowed file extensions mapping to MIME groups.
      */
     protected const ALLOWED_EXTENSIONS = [
-        'jpg' => 'image', 'jpeg' => 'image', 'png' => 'image', 'webp' => 'image', 'avif' => 'image',
+        'jpg' => 'image', 'jpeg' => 'image', 'png' => 'image', 'webp' => 'image', 'avif' => 'image', 'gif' => 'image',
         'mp4' => 'video', 'mov' => 'video', 'webm' => 'video',
         'pdf' => 'document', 'dwg' => 'blueprint', 'dxf' => 'blueprint',
     ];
+
+    public function __construct(
+        protected ImageThumbnailService $thumbnailService = new ImageThumbnailService()
+    ) {}
 
     /**
      * List media library items with rich filtering and assignment tracking.
@@ -151,9 +190,8 @@ class MediaController extends Controller
         foreach ($files as $index => $file) {
             $originalName = $file->getClientOriginalName();
             $extension = strtolower($file->getClientOriginalExtension());
-            $realMime = $file->getMimeType();
 
-            // 1. Strict security check: block dangerous extensions
+            // 1. Strict security check: block dangerous extensions regardless of MIME
             if (in_array($extension, self::FORBIDDEN_EXTENSIONS)) {
                 $errors[] = [
                     'file' => $originalName,
@@ -162,18 +200,64 @@ class MediaController extends Controller
                 continue;
             }
 
-            // 2. Validate allowed extensions and content
-            if (!array_key_exists($extension, self::ALLOWED_EXTENSIONS)) {
+            // 2. Inspect real server-side binary MIME type using PHP finfo
+            $realMime = $file->getMimeType();
+            if (function_exists('finfo_open')) {
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $detectedMime = finfo_file($finfo, $file->getRealPath());
+                finfo_close($finfo);
+                if (!empty($detectedMime)) {
+                    $realMime = $detectedMime;
+                }
+            }
+
+            // 3. Validate real MIME and determine canonical media group
+            $detectedType = null;
+            $allowedExtensions = [];
+            $dimensions = null;
+
+            if (array_key_exists($realMime, self::ALLOWED_IMAGE_MIMES)) {
+                $detectedType = 'image';
+                $allowedExtensions = self::ALLOWED_IMAGE_MIMES[$realMime];
+
+                // Verify image integrity with getimagesize
+                $imageInfo = @getimagesize($file->getRealPath());
+                if (!$imageInfo || empty($imageInfo[0]) || empty($imageInfo[1])) {
+                    $errors[] = [
+                        'file' => $originalName,
+                        'error' => "The file '{$originalName}' is not a valid image or contains disguised/malformed data.",
+                    ];
+                    continue;
+                }
+
+                [$width, $height] = $imageInfo;
+                // Decompression bomb & memory-exhaustion protection
+                if (($width * $height) > 35000000 || $width > 8000 || $height > 8000) {
+                    $errors[] = [
+                        'file' => $originalName,
+                        'error' => "Image dimensions ({$width}x{$height}) exceed safe limits to protect server resources.",
+                    ];
+                    continue;
+                }
+
+                $dimensions = "{$width}x{$height}";
+            } elseif (array_key_exists($realMime, self::ALLOWED_VIDEO_MIMES)) {
+                $detectedType = 'video';
+                $allowedExtensions = self::ALLOWED_VIDEO_MIMES[$realMime];
+            } elseif (array_key_exists($realMime, self::ALLOWED_DOCUMENT_MIMES)) {
+                $allowedExtensions = self::ALLOWED_DOCUMENT_MIMES[$realMime];
+                $detectedType = (in_array('dwg', $allowedExtensions) || in_array('dxf', $allowedExtensions))
+                    ? 'blueprint'
+                    : 'document';
+            } else {
                 $errors[] = [
                     'file' => $originalName,
-                    'error' => "Unsupported file format '.{$extension}'. Supported formats: JPG, PNG, WEBP, AVIF, MP4, MOV, WEBM, PDF, DWG, DXF.",
+                    'error' => "Unsupported file type or invalid MIME '{$realMime}'. Only verified JPG, PNG, WEBP, AVIF, GIF, MP4, MOV, WEBM, PDF, DWG, and DXF files are accepted.",
                 ];
                 continue;
             }
 
-            $detectedType = $request->input('media_type') ?: self::ALLOWED_EXTENSIONS[$extension];
-
-            // 3. File size validation based on type
+            // 4. File size validation based on actual uploaded file size
             $fileSizeBytes = $file->getSize();
             $maxBytes = $detectedType === 'image' ? 15 * 1024 * 1024 : 50 * 1024 * 1024;
             if ($fileSizeBytes > $maxBytes) {
@@ -185,31 +269,34 @@ class MediaController extends Controller
                 continue;
             }
 
-            // 4. Safe unique filename generation
-            $safeBase = Str::slug(pathinfo($originalName, PATHINFO_FILENAME));
-            $safeFilename = date('Ymd_His') . '_' . Str::random(8) . '_' . ($safeBase ?: 'asset') . '.' . $extension;
+            // 5. Safe unique server-side filename (sanitized extension matching validated MIME)
+            $safeExt = in_array($extension, $allowedExtensions) ? $extension : $allowedExtensions[0];
+            $safeBase = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'asset';
+            $safeFilename = date('Ymd_His') . '_' . Str::random(8) . '_' . substr($safeBase, 0, 40) . '.' . $safeExt;
             $relativeDir = 'media/' . date('Y/m');
 
-            // 5. Store file using Laravel Storage abstraction
+            // 6. Store file using Laravel Storage abstraction
             $path = $file->storeAs($relativeDir, $safeFilename, 'public');
-            // Canonical relative URL for portable, environment-independent storage
             $canonicalUrl = '/storage/' . ltrim($path, '/');
 
-            // 6. Extract image dimensions if image
-            $dimensions = null;
+            // 7. Generate optimized thumbnail for grid previews (preserving original full-size)
+            $thumbnailUrl = $canonicalUrl;
             if ($detectedType === 'image') {
-                $imageInfo = @getimagesize($file->getRealPath());
-                if ($imageInfo) {
-                    $dimensions = "{$imageInfo[0]}x{$imageInfo[1]}";
+                $generatedThumb = $this->thumbnailService->generateThumbnail(
+                    Storage::disk('public')->path($path),
+                    'thumbnails/' . date('Y/m')
+                );
+                if ($generatedThumb) {
+                    $thumbnailUrl = $generatedThumb;
                 }
             }
 
-            // 7. Save to Media database table
+            // 8. Save to Media database table
             $media = Media::create([
                 'filename' => $safeFilename,
-                'original_name' => $originalName,
+                'original_name' => pathinfo($originalName, PATHINFO_BASENAME),
                 'url' => $canonicalUrl,
-                'thumbnail_url' => $canonicalUrl,
+                'thumbnail_url' => $thumbnailUrl,
                 'media_type' => $detectedType,
                 'mime_type' => $realMime ?: 'application/octet-stream',
                 'file_size' => $fileSizeBytes,
@@ -220,14 +307,14 @@ class MediaController extends Controller
                 'created_by' => $request->user()?->id,
             ]);
 
-            // 8. If project was selected, assign to project gallery
+            // 9. If project was selected, assign to project gallery
             if ($project) {
                 $maxSort = ProjectMedia::where('project_id', $project->id)->max('sort_order') ?? 0;
-                $projectMedia = ProjectMedia::create([
+                ProjectMedia::create([
                     'project_id' => $project->id,
                     'media_id' => $media->id,
                     'url' => $media->url,
-                    'thumbnail_url' => $media->thumbnail_url,
+                    'thumbnail_url' => $media->thumbnail_url ?: $media->url,
                     'media_type' => $media->media_type,
                     'title' => $media->title,
                     'caption' => null,
@@ -239,6 +326,7 @@ class MediaController extends Controller
                 // If project lacks a cover image and this is an image, set as cover
                 if (empty($project->cover_image) && $detectedType === 'image') {
                     $project->cover_image = $media->url;
+                    $project->cover_media_id = $media->id;
                     $project->save();
                 }
             }
@@ -246,6 +334,7 @@ class MediaController extends Controller
             $uploadedRecords[] = [
                 'id' => $media->id,
                 'url' => $media->url,
+                'thumbnail_url' => $media->thumbnail_url,
                 'filename' => $media->filename,
                 'original_name' => $media->original_name,
                 'media_type' => $media->media_type,
@@ -392,26 +481,76 @@ class MediaController extends Controller
     }
 
     /**
-     * Delete an unassigned media asset from library and disk.
+     * Delete an unassigned media asset from library and disk with comprehensive in-use protection.
      */
     public function destroy(int $id): JsonResponse
     {
-        $media = Media::withCount('projectAssignments')->findOrFail($id);
+        $media = Media::findOrFail($id);
 
-        if ($media->project_assignments_count > 0) {
+        $references = [];
+
+        // 1. Check Project gallery assignments
+        $galleryCount = ProjectMedia::where('media_id', $media->id)
+            ->orWhere('url', $media->url)
+            ->count();
+        if ($galleryCount > 0) {
+            $references[] = "assigned to {$galleryCount} project gallery item(s)";
+        }
+
+        // 2. Check Project cover images (by foreign key or URL)
+        $coverCount = Project::where('cover_media_id', $media->id)
+            ->orWhere('cover_image', $media->url)
+            ->count();
+        if ($coverCount > 0) {
+            $references[] = "used as cover image in {$coverCount} project(s)";
+        }
+
+        // 3. Check Homepage featured slider items
+        $sliderCount = FeaturedItem::where('image_override', $media->url)->count();
+        if ($sliderCount > 0) {
+            $references[] = "active in {$sliderCount} featured slider item(s)";
+        }
+
+        // 4. Check Category cover images
+        $categoryCount = PortfolioCategory::where('cover_image', $media->url)->count();
+        if ($categoryCount > 0) {
+            $references[] = "used as cover image in {$categoryCount} portfolio category/categories";
+        }
+
+        if ($galleryCount > 0 && empty($coverCount) && empty($sliderCount) && empty($categoryCount)) {
             return response()->json([
-                'message' => "Cannot delete media asset because it is currently assigned to {$media->project_assignments_count} project(s). Please unassign it first.",
+                'message' => "Cannot delete media asset because it is currently assigned to {$galleryCount} project(s). Please unassign it first.",
+                'references' => $references,
+                'in_use' => true,
             ], 422);
         }
 
-        // Remove file from disk
-        if ($media->url) {
-            $parsed = parse_url($media->url, PHP_URL_PATH);
-            $relativePath = str_replace('/storage/', '', $parsed);
-            Storage::disk('public')->delete($relativePath);
+        if (!empty($references)) {
+            return response()->json([
+                'message' => "Cannot delete media asset because it is currently in active use: " . implode(', ', $references) . ". Please unassign or replace it first.",
+                'references' => $references,
+                'in_use' => true,
+            ], 422);
         }
 
-        $media->delete();
+        // Execute DB deletion inside transaction first before touching storage
+        DB::transaction(function () use ($media) {
+            $media->delete();
+        });
+
+        // Safely remove original file from storage
+        if ($media->url) {
+            $parsed = parse_url($media->url, PHP_URL_PATH);
+            $relativePath = preg_replace('#^/storage/#', '', $parsed);
+            if ($relativePath && Storage::disk('public')->exists($relativePath)) {
+                Storage::disk('public')->delete($relativePath);
+            }
+        }
+
+        // Safely remove generated thumbnail from storage if different from original
+        if (!empty($media->thumbnail_url) && $media->thumbnail_url !== $media->url) {
+            $this->thumbnailService->deleteThumbnail($media->thumbnail_url);
+        }
 
         return response()->json([
             'message' => 'Media asset removed from library and storage.',

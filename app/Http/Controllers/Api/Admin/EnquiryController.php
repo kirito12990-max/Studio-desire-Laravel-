@@ -227,15 +227,40 @@ class EnquiryController extends Controller
     }
 
     /**
-     * Delete an enquiry and purge attachments.
+     * Delete an enquiry and safely purge unreferenced private attachment files.
      */
     public function destroy(int $id): JsonResponse
     {
-        $enquiry = ProjectEnquiry::findOrFail($id);
+        $enquiry = ProjectEnquiry::with('attachments')->findOrFail($id);
         $ref = $enquiry->reference_number;
+        $attachments = $enquiry->attachments;
 
-        // Attachments are cascade-deleted at DB level
-        $enquiry->delete();
+        // Collect storage paths before DB deletion
+        $attachmentPaths = $attachments->map(fn ($a) => [
+            'id' => $a->id,
+            'path' => $a->storage_path,
+        ])->filter(fn ($item) => !empty($item['path']))->values();
+
+        // 1. Delete enquiry in database transaction first
+        DB::transaction(function () use ($enquiry) {
+            $enquiry->delete();
+        });
+
+        // 2. Remove physical private files from storage ONLY if no other records reference them
+        $localDisk = Storage::disk('local');
+        foreach ($attachmentPaths as $item) {
+            $path = $item['path'];
+            $otherReferences = EnquiryAttachment::where('storage_path', $path)->exists();
+            if (!$otherReferences) {
+                try {
+                    if ($localDisk->exists($path)) {
+                        $localDisk->delete($path);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Failed to delete orphaned enquiry attachment file '{$path}': " . $e->getMessage());
+                }
+            }
+        }
 
         return response()->json([
             'message' => "Enquiry {$ref} deleted successfully.",

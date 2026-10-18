@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('title', 255);
             $table->string('slug', 255)->unique()->index();
             $table->string('subtitle', 500)->nullable();
-            $table->string('location', 255);
-            $table->integer('year')->default(2026);
+            $table->string('location', 255)->nullable();
+            $table->integer('year')->nullable()->default(null);
             $table->string('category', 100)->default('RESIDENTIAL')->index();
             $table->string('project_type', 255)->nullable();
             $table->string('area', 100)->nullable();

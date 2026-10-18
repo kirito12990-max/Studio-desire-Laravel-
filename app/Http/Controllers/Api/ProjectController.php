@@ -17,16 +17,8 @@ class ProjectController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Project::query()
-            ->with(['category', 'media'])
-            ->where(function ($q) {
-                $q->where('is_published', true)
-                  ->orWhere('publishing_status', 'published');
-            })
-            ->where(function ($q) {
-                // Ensure draft and archived projects are strictly excluded from public archive
-                $q->whereNull('publishing_status')
-                  ->orWhere('publishing_status', 'published');
-            });
+            ->published()
+            ->with(['category', 'media']);
 
         // Filter by Authoritative Category ID
         if ($request->filled('category_id')) {
@@ -114,20 +106,14 @@ class ProjectController extends Controller
      */
     public function featured(): JsonResponse
     {
-        $project = Project::with(['category', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')])
-            ->where(function ($q) {
-                $q->where('is_published', true)
-                  ->orWhere('publishing_status', 'published');
-            })
+        $project = Project::published()
+            ->with(['category', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')])
             ->where('featured', true)
             ->first();
 
         if (!$project) {
-            $project = Project::with(['category', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')])
-                ->where(function ($q) {
-                    $q->where('is_published', true)
-                      ->orWhere('publishing_status', 'published');
-                })
+            $project = Project::published()
+                ->with(['category', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')])
                 ->orderByDesc('id')
                 ->first();
         }
@@ -147,7 +133,7 @@ class ProjectController extends Controller
     public function categories(): JsonResponse
     {
         $categoryNames = PortfolioCategory::whereHas('projects', function ($q) {
-            $q->where('is_published', true);
+            $q->published();
         })->pluck('name')->toArray();
 
         return response()->json(array_merge(['ALL'], $categoryNames));
@@ -158,15 +144,8 @@ class ProjectController extends Controller
      */
     public function show(string $slugOrId): JsonResponse
     {
-        $query = Project::with(['category', 'subcategory', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')])
-            ->where(function ($q) {
-                $q->where('is_published', true)
-                  ->orWhere('publishing_status', 'published');
-            })
-            ->where(function ($q) {
-                $q->whereNull('publishing_status')
-                  ->orWhere('publishing_status', 'published');
-            });
+        $query = Project::published()
+            ->with(['category', 'subcategory', 'media' => fn ($q) => $q->where('is_published', true)->orderBy('sort_order')]);
 
         if (ctype_digit($slugOrId)) {
             $project = (clone $query)->where('id', (int) $slugOrId)->first();
