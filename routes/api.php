@@ -36,6 +36,7 @@ Route::prefix('projects')->group(function () {
     Route::get('/featured', [ProjectController::class, 'featured']);
     Route::get('/{slug_or_id}', [ProjectController::class, 'show']);
 });
+Route::get('/categories', [AdminCategoryController::class, 'index']);
 
 /*
 |--------------------------------------------------------------------------
