@@ -36,6 +36,24 @@ class Media extends Model
         ];
     }
 
+    /**
+     * Return canonical relative media URL, stripping localhost/127.0.0.1 development domains.
+     */
+    public function getUrlAttribute(?string $value): ?string
+    {
+        if (empty($value)) return $value;
+        return preg_replace('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/storage/.*|/uploads/.*)$#i', '$1', $value);
+    }
+
+    /**
+     * Return canonical relative thumbnail URL, stripping localhost/127.0.0.1 development domains.
+     */
+    public function getThumbnailUrlAttribute(?string $value): ?string
+    {
+        if (empty($value)) return $value;
+        return preg_replace('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/storage/.*|/uploads/.*)$#i', '$1', $value);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

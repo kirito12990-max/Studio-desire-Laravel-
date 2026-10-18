@@ -95,24 +95,46 @@ class EnquiryController extends Controller
         // 4. Clean and sanitize administrative inputs
         $projectType = $validated['project_type'] ?? $validated['service'] ?? 'Architecture';
 
-        $enquiry = ProjectEnquiry::create([
-            'name' => trim($validated['name']),
-            'email' => strtolower(trim($validated['email'])),
-            'phone' => isset($validated['phone']) ? trim($validated['phone']) : null,
-            'project_type' => $projectType,
-            'location' => $validated['location'] ?? null,
-            'budget' => $validated['budget'] ?? null,
-            'timeline' => $validated['timeline'] ?? null,
-            'message' => trim($validated['message']),
-            'source' => $validated['source'] ?? 'website',
-            'source_page' => $validated['source_page'] ?? null,
-            'originating_project_id' => $validated['originating_project_id'] ?? null,
-            'status' => 'NEW', // Force initial lifecycle status
-            'internal_notes' => null, // Never accept client-supplied internal notes
-            'converted_project_id' => null,
-            'ip_address' => $ip,
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-        ]);
+        $maxAttempts = 3;
+        $attempt = 0;
+        $enquiry = null;
+
+        while ($attempt < $maxAttempts && !$enquiry) {
+            $attempt++;
+            try {
+                $enquiry = ProjectEnquiry::create([
+                    'reference_number' => ProjectEnquiry::generateUniqueReference(),
+                    'name' => trim($validated['name']),
+                    'email' => strtolower(trim($validated['email'])),
+                    'phone' => isset($validated['phone']) ? trim($validated['phone']) : null,
+                    'project_type' => $projectType,
+                    'location' => $validated['location'] ?? null,
+                    'budget' => $validated['budget'] ?? null,
+                    'timeline' => $validated['timeline'] ?? null,
+                    'message' => trim($validated['message']),
+                    'source' => $validated['source'] ?? 'website',
+                    'source_page' => $validated['source_page'] ?? null,
+                    'originating_project_id' => $validated['originating_project_id'] ?? null,
+                    'status' => 'NEW', // Force initial lifecycle status
+                    'internal_notes' => null, // Never accept client-supplied internal notes
+                    'converted_project_id' => null,
+                    'ip_address' => $ip,
+                    'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($attempt >= $maxAttempts) {
+                    return response()->json([
+                        'message' => 'Unable to record enquiry at this time due to high submission volume. Please try again.',
+                    ], 422);
+                }
+            }
+        }
+
+        if (!$enquiry) {
+            return response()->json([
+                'message' => 'Unable to process enquiry. Please try again.',
+            ], 422);
+        }
 
         // 5. Store optional confidential attachment on private storage
         if ($request->hasFile('attachment')) {

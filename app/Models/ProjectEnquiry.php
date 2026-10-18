@@ -43,13 +43,47 @@ class ProjectEnquiry extends Model
         ];
     }
 
+    /**
+     * Generate a collision-safe sequential enquiry reference number (e.g. ENQ-2026-0001).
+     * Unlike row counts, this examines the highest existing sequence number for the year,
+     * ensuring that deleting records will never cause duplicate reference collisions.
+     */
+    public static function generateUniqueReference(?string $year = null): string
+    {
+        $year = $year ?: date('Y');
+        $prefix = "ENQ-{$year}-";
+
+        // Query all existing reference numbers for the year to determine the true maximum sequence
+        $references = static::where('reference_number', 'LIKE', "{$prefix}%")
+            ->pluck('reference_number');
+
+        $maxSeq = 0;
+        foreach ($references as $ref) {
+            if (preg_match('/^ENQ-\d{4}-(\d+)$/', $ref, $matches)) {
+                $seq = (int) $matches[1];
+                if ($seq > $maxSeq) {
+                    $maxSeq = $seq;
+                }
+            }
+        }
+
+        $nextSeq = $maxSeq + 1;
+        $candidate = sprintf('ENQ-%s-%04d', $year, $nextSeq);
+
+        // Additional safeguard against concurrent race conditions
+        while (static::where('reference_number', $candidate)->exists()) {
+            $nextSeq++;
+            $candidate = sprintf('ENQ-%s-%04d', $year, $nextSeq);
+        }
+
+        return $candidate;
+    }
+
     protected static function booted(): void
     {
         static::creating(function (ProjectEnquiry $enquiry) {
             if (empty($enquiry->reference_number)) {
-                $year = date('Y');
-                $count = static::whereYear('created_at', $year)->count() + 1;
-                $enquiry->reference_number = sprintf('ENQ-%s-%04d', $year, $count);
+                $enquiry->reference_number = static::generateUniqueReference();
             }
 
             if (empty($enquiry->status_history)) {

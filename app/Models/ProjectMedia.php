@@ -34,6 +34,34 @@ class ProjectMedia extends Model
         ];
     }
 
+    /**
+     * Return canonical relative URL, normalizing localhost/127.0.0.1 development domains.
+     */
+    public function getUrlAttribute(?string $value): ?string
+    {
+        if (empty($value)) {
+            if ($this->relationLoaded('media') && $this->getRelation('media')) {
+                return $this->getRelation('media')->url;
+            }
+            return $value;
+        }
+        return preg_replace('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/storage/.*|/uploads/.*)$#i', '$1', $value);
+    }
+
+    /**
+     * Return canonical relative thumbnail URL, normalizing localhost/127.0.0.1 development domains.
+     */
+    public function getThumbnailUrlAttribute(?string $value): ?string
+    {
+        if (empty($value)) {
+            if ($this->relationLoaded('media') && $this->getRelation('media')) {
+                return $this->getRelation('media')->thumbnail_url;
+            }
+            return $value;
+        }
+        return preg_replace('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/storage/.*|/uploads/.*)$#i', '$1', $value);
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'project_id');

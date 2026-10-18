@@ -27,6 +27,7 @@ class Project extends Model
         'area',
         'description',
         'cover_image',
+        'cover_media_id',
         'status',
         'publishing_status',
         'featured',
@@ -118,6 +119,25 @@ class Project extends Model
             $errors['cover_image'] = 'Cover image is required before publishing.';
         }
         return $errors;
+    }
+
+    /**
+     * Resolves canonical cover image path, supporting both legacy string paths and cover_media_id foreign key.
+     */
+    public function getCoverImageAttribute(?string $value): ?string
+    {
+        if (empty($value)) {
+            if (!empty($this->cover_media_id) && $this->relationLoaded('coverMedia') && $this->getRelation('coverMedia')) {
+                return $this->getRelation('coverMedia')->url;
+            }
+            return $value;
+        }
+        return preg_replace('#^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(/storage/.*|/uploads/.*)$#i', '$1', $value);
+    }
+
+    public function coverMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'cover_media_id');
     }
 
     public function portfolioCategory(): BelongsTo

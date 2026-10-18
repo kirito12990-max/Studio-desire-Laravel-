@@ -48,13 +48,16 @@ export function resolveMediaUrl(
     return trimmed;
   }
 
-  // Preserve valid absolute external HTTP/HTTPS URLs
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
+  // Strip hardcoded localhost / 127.0.0.1 development origins so URLs become canonical relative
+  let normalized = trimmed.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(?=\/)/i, "");
+
+  // Preserve valid absolute external HTTP/HTTPS URLs (e.g. CDN)
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
   }
 
   // Normalize Windows backslashes
-  let cleanPath = trimmed.replace(/\\+/g, "/");
+  let cleanPath = normalized.replace(/\\+/g, "/");
 
   // Strip duplicate leading slashes and ensure single leading slash
   cleanPath = cleanPath.replace(/^\/+/, "/");
@@ -62,12 +65,13 @@ export function resolveMediaUrl(
     cleanPath = `/${cleanPath}`;
   }
 
-  // Deduplicate repeated /uploads path segments
+  // Deduplicate repeated path segments
   cleanPath = cleanPath.replace(/\/uploads\/uploads\//g, "/uploads/");
+  cleanPath = cleanPath.replace(/\/storage\/storage\//g, "/storage/");
 
-  // When API_BASE_URL is configured (e.g. http://127.0.0.1:8080 or production backend domain),
-  // prefix backend origin to root-relative media paths
-  if (API_BASE_URL && cleanPath.startsWith("/uploads/")) {
+  // When API_BASE_URL is configured (e.g. separate backend origin in dev mode),
+  // prefix backend origin to root-relative media paths (/uploads/ or /storage/)
+  if (API_BASE_URL && (cleanPath.startsWith("/uploads/") || cleanPath.startsWith("/storage/"))) {
     return `${API_BASE_URL}${cleanPath}`;
   }
 
