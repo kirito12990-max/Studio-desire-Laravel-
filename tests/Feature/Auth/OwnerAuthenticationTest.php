@@ -216,4 +216,87 @@ class OwnerAuthenticationTest extends TestCase
         $user->refresh();
         $this->assertTrue(Hash::check('NewStrongPassword456!', $user->password));
     }
+
+    public function test_owner_can_login_with_case_insensitive_username(): void
+    {
+        $user = User::create([
+            'name' => 'Studio Owner',
+            'username' => 'Studio001',
+            'email' => 'studio001@studiodesire.com',
+            'password' => 'SecurePass123!',
+            'role' => 'OWNER',
+            'is_active' => true,
+        ]);
+
+        // Lowercase username
+        $responseLower = $this->postJson('/api/auth/login', [
+            'username' => 'studio001',
+            'password' => 'SecurePass123!',
+        ]);
+        $responseLower->assertStatus(200)
+            ->assertJson(['username' => 'Studio001']);
+        $this->assertAuthenticatedAs($user);
+
+        // Uppercase username
+        $responseUpper = $this->postJson('/api/auth/login', [
+            'username' => 'STUDIO001',
+            'password' => 'SecurePass123!',
+        ]);
+        $responseUpper->assertStatus(200)
+            ->assertJson(['username' => 'Studio001']);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_owner_can_login_with_case_insensitive_email(): void
+    {
+        $user = User::create([
+            'name' => 'Studio Owner',
+            'username' => 'Studio002',
+            'email' => 'Owner@StudioDesire.com',
+            'password' => 'SecurePass123!',
+            'role' => 'OWNER',
+            'is_active' => true,
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'username' => 'owner@studiodesire.com',
+            'password' => 'SecurePass123!',
+        ]);
+        $response->assertStatus(200)
+            ->assertJson(['username' => 'Studio002']);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_session_persists_across_cookie_authenticated_requests(): void
+    {
+        $user = User::create([
+            'name' => 'Studio Owner',
+            'username' => 'cookieowner',
+            'email' => 'cookie@studiodesire.com',
+            'password' => 'CookieSecret123!',
+            'role' => 'OWNER',
+            'is_active' => true,
+        ]);
+
+        $loginResponse = $this->postJson('/api/auth/login', [
+            'username' => 'cookieowner',
+            'password' => 'CookieSecret123!',
+        ]);
+        $loginResponse->assertStatus(200);
+
+        // Extract session cookies and verify /api/auth/me succeeds with session alone
+        $cookies = $loginResponse->headers->getCookies();
+        $cookieMap = [];
+        foreach ($cookies as $c) {
+            $cookieMap[$c->getName()] = $c->getValue();
+        }
+
+        $sessionResponse = $this->withCookies($cookieMap)->getJson('/api/auth/me');
+        $sessionResponse->assertStatus(200)
+            ->assertJson([
+                'id' => $user->id,
+                'username' => 'cookieowner',
+                'role' => 'OWNER',
+            ]);
+    }
 }

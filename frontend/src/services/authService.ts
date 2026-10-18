@@ -1,4 +1,4 @@
-import { API_BASE } from "../config/api";
+import { API_BASE, API_BASE_URL } from "../config/api";
 import { AuthUser, LoginResponse, UserRole } from "../types/user";
 
 export type { AuthUser, LoginResponse, UserRole };
@@ -11,11 +11,41 @@ const LEGACY_USER_KEY = "sd_owner_user";
 
 let inMemoryUser: AuthUser | null = null;
 let inMemoryCsrfToken: string | null = null;
+let isLoginInProgress = false;
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp(`(^|;\\s*)(${name})=([^;]*)`));
   return match ? decodeURIComponent(match[3]) : null;
+}
+
+export function formatAuthErrorMessage(res: Response, data?: any): string {
+  if (res.status === 419) {
+    return "CSRF token mismatch or session expired (HTTP 419). Please refresh and try again.";
+  }
+  if (res.status === 429) {
+    const retry = data?.retry_after ? ` Please try again in ${data.retry_after} seconds.` : " Please try again shortly.";
+    return (data?.message || "Too many login attempts.") + retry;
+  }
+  if (res.status === 401) {
+    return data?.message || data?.detail || "Invalid credentials or inactive account.";
+  }
+  if (res.status === 403) {
+    return data?.message || data?.detail || "Access denied. Insufficient permissions.";
+  }
+  if (res.status === 422) {
+    if (data?.errors && typeof data.errors === "object") {
+      const firstField = Object.keys(data.errors)[0];
+      if (firstField && Array.isArray(data.errors[firstField]) && data.errors[firstField].length > 0) {
+        return data.errors[firstField][0];
+      }
+    }
+    return data?.message || data?.detail || "Validation failed. Please verify submitted credentials.";
+  }
+  if (res.status >= 500) {
+    return `Server error encountered (HTTP ${res.status}). Please check server logs or try again.`;
+  }
+  return data?.message || data?.detail || `Authentication request failed with status ${res.status}.`;
 }
 
 export const authService = {
@@ -70,8 +100,16 @@ export const authService = {
    * Generates request headers for state-changing operations including CSRF protection.
    */
   getCsrfHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
     const token = this.getCsrfToken();
-    return token ? { "X-CSRF-Token": token } : {};
+    if (token) {
+      headers["X-CSRF-Token"] = token;
+    }
+    const xsrf = readCookie("XSRF-TOKEN");
+    if (xsrf) {
+      headers["X-XSRF-TOKEN"] = xsrf;
+    }
+    return headers;
   },
 
   /**
@@ -95,6 +133,43 @@ export const authService = {
     } catch {
       // Ignore network errors on passive fetch
     }
+    return this.getCsrfToken() || "";
+  },
+
+  /**
+   * Mandatory Sanctum SPA CSRF handshake before submitting authentication credentials.
+   * Calls GET /sanctum/csrf-cookie followed by GET /api/auth/csrf-token.
+   */
+  async ensureCsrfHandshake(): Promise<string> {
+    try {
+      await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+    } catch {
+      // Allow fallback if same-origin doesn't require separate sanctum endpoint
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/csrf-token`, {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.csrf_token) {
+          inMemoryCsrfToken = data.csrf_token;
+          return data.csrf_token;
+        }
+      }
+    } catch {
+      // Ignore network errors on passive handshake
+    }
+
     return this.getCsrfToken() || "";
   },
 
@@ -146,26 +221,67 @@ export const authService = {
 
   /**
    * Authenticates user against backend and initializes HttpOnly cookie session.
+   * Enforces CSRF handshake, credentialed transport, and post-login session verification.
    */
   async login(username: string, password: string): Promise<LoginResponse> {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: "Login failed" }));
-      throw new Error(err.detail || "Authentication failed. Please verify credentials.");
+    if (isLoginInProgress) {
+      throw new Error("A login request is already in progress. Please wait.");
     }
 
-    const data: LoginResponse = await res.json();
-    this.setSession(data);
-    return data;
+    isLoginInProgress = true;
+    try {
+      // 1. Mandatory CSRF handshake prior to login
+      await this.ensureCsrfHandshake();
+
+      // 2. Prepare headers with both X-CSRF-TOKEN and X-XSRF-TOKEN
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+
+      const csrf = this.getCsrfToken();
+      if (csrf) {
+        headers["X-CSRF-TOKEN"] = csrf;
+        headers["X-CSRF-Token"] = csrf;
+      }
+      const xsrf = readCookie("XSRF-TOKEN");
+      if (xsrf) {
+        headers["X-XSRF-TOKEN"] = xsrf;
+      }
+
+      // 3. Submit credentials with credentials: "include"
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          credentials: "include",
+          headers,
+          body: JSON.stringify({ username, password })
+        });
+      } catch (netErr: any) {
+        throw new Error("Network connection failure. Please verify server connectivity.");
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(formatAuthErrorMessage(res, errData));
+      }
+
+      const data: LoginResponse = await res.json();
+      this.setSession(data);
+
+      // 4. Confirm persistent session via /api/auth/me before returning
+      try {
+        await this.getMe();
+      } catch (verifyErr: any) {
+        this.clearSession();
+        throw new Error("Login succeeded but persistent session could not be established. Please check cookie settings.");
+      }
+
+      return data;
+    } finally {
+      isLoginInProgress = false;
+    }
   },
 
   /**
@@ -204,7 +320,15 @@ export const authService = {
       throw new Error("Session expired. Please log in again.");
     }
 
-    const user: AuthUser = await res.json();
+    const raw: any = await res.json();
+    const user: AuthUser = {
+      id: raw.id ?? raw.user_id,
+      username: raw.username,
+      email: raw.email,
+      role: raw.role,
+      must_change_password: Boolean(raw.must_change_password)
+    };
+
     inMemoryUser = user;
     try {
       window.sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));

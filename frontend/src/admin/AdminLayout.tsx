@@ -224,22 +224,6 @@ const NAVIGATION_GROUPS: NavGroupConfig[] = [
         badge: (stats) => stats && stats.new_enquiries > 0 ? (
           <span className="highlight-badge highlight-badge-green">{stats.new_enquiries} NEW</span>
         ) : null
-      },
-      {
-        id: "tasks",
-        label: "Tasks",
-        icon: Icons.Tasks,
-        badge: (stats) => stats && stats.overdue_tasks > 0 ? (
-          <span className="highlight-badge highlight-badge-red">{stats.overdue_tasks}</span>
-        ) : null
-      },
-      {
-        id: "meetings",
-        label: "Calendar & Meetings",
-        icon: Icons.Meetings,
-        badge: (stats) => stats && stats.upcoming_meetings_count > 0 ? (
-          <span className="admin-nav-count-chip">{stats.upcoming_meetings_count}</span>
-        ) : null
       }
     ]
   },
@@ -260,35 +244,8 @@ const NAVIGATION_GROUPS: NavGroupConfig[] = [
     ]
   },
   {
-    title: "PROJECT RESOURCES",
+    title: "ACCOUNT & SECURITY",
     items: [
-      { id: "3d", label: "3D Visualizations", icon: Icons.ThreeD },
-      { id: "vr", label: "VR Experience Matrix", icon: Icons.VR },
-      { id: "materials", label: "Materials Board", icon: Icons.Materials },
-      { id: "files", label: "Files & Contracts", icon: Icons.Files }
-    ]
-  },
-  {
-    title: "BUSINESS",
-    items: [
-      {
-        id: "finance",
-        label: "Finance & Payments",
-        icon: Icons.Finance,
-        requiredRoles: ["MASTER", "ADMIN", "OWNER", "PROJECT_MANAGER"]
-      }
-    ]
-  },
-  {
-    title: "PEOPLE & SECURITY",
-    items: [
-      {
-        id: "users",
-        label: "Team & Roles",
-        icon: Icons.Users,
-        requiredRoles: ["MASTER", "ADMIN", "OWNER"]
-      },
-      { id: "activity", label: "Activity Log", icon: Icons.Activity },
       { id: "settings", label: "Settings", icon: Icons.Settings }
     ]
   }

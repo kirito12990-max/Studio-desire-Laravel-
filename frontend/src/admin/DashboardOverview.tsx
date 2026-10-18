@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { adminService } from "../services/adminService";
-import { DashboardStats, ActivityLogItem } from "../types/admin";
+import { DashboardStats } from "../types/admin";
 
 interface DashboardOverviewProps {
   onNavigateTab: (tab: string, context?: any) => void;
@@ -11,7 +11,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onNavigateTab
 }) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentLogs, setRecentLogs] = useState<ActivityLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,12 +22,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const [s, l] = await Promise.all([
-        adminService.getDashboardStats(),
-        adminService.getActivityLogs(10)
-      ]);
+      const s = await adminService.getDashboardStats();
       setStats(s);
-      setRecentLogs(l);
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard metrics");
     } finally {
@@ -316,12 +311,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         )}
       </div>
 
-      {/* SECTION 3: QUICK WORKSPACE SHORTCUTS & RECENT AUDIT LOG */}
+      {/* SECTION 3: QUICK WORKSPACE SHORTCUTS & RECENT ENQUIRIES */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
         {/* Quick Operations Modules */}
         <div className="admin-surface-card">
           <div className="admin-surface-card-header">
-            <h3 className="admin-card-title">Operational Modules</h3>
+            <h3 className="admin-card-title">Portfolio Modules</h3>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
             <button
@@ -352,14 +347,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               type="button"
               className="admin-btn admin-btn-secondary"
               style={{ justifyContent: "flex-start", padding: "0.85rem 1rem", fontSize: "0.8rem" }}
-              onClick={() => onNavigateTab("tasks")}
-            >
-              ✓ Task Board ({stats?.overdue_tasks || 0} Overdue)
-            </button>
-            <button
-              type="button"
-              className="admin-btn admin-btn-secondary"
-              style={{ justifyContent: "flex-start", padding: "0.85rem 1rem", fontSize: "0.8rem" }}
               onClick={() => onNavigateTab("media")}
             >
               🖼️ Media Library ({stats?.total_photos || 0} Assets)
@@ -368,55 +355,76 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               type="button"
               className="admin-btn admin-btn-secondary"
               style={{ justifyContent: "flex-start", padding: "0.85rem 1rem", fontSize: "0.8rem" }}
-              onClick={() => onNavigateTab("finance")}
+              onClick={() => onNavigateTab("categories")}
             >
-              💰 Accounts & Ledger
+              🏷️ Portfolio Categories
+            </button>
+            <button
+              type="button"
+              className="admin-btn admin-btn-secondary"
+              style={{ justifyContent: "flex-start", padding: "0.85rem 1rem", fontSize: "0.8rem" }}
+              onClick={() => onNavigateTab("content")}
+            >
+              🌐 Website Content
             </button>
           </div>
         </div>
 
-        {/* Real Activity Stream in Card Table Format */}
+        {/* Real Inquiries Stream from Backend */}
         <div className="admin-surface-card">
           <div className="admin-surface-card-header">
-            <h3 className="admin-card-title">Recent Audit Trail</h3>
+            <h3 className="admin-card-title">Recent Inquiries</h3>
             <button
               type="button"
               className="admin-btn admin-btn-secondary admin-btn-small"
-              onClick={() => onNavigateTab("activity")}
+              onClick={() => onNavigateTab("enquiries")}
             >
-              View Full Log →
+              View All Leads →
             </button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {recentLogs.slice(0, 6).map((log) => (
-              <div
-                key={log.id}
-                style={{
-                  padding: "0.75rem 1rem",
-                  backgroundColor: "var(--admin-surface-subtle)",
-                  borderRadius: "var(--admin-radius-sm)",
-                  border: "1px solid var(--admin-border)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  fontSize: "0.78rem"
-                }}
-              >
-                <div>
-                  <strong style={{ color: "var(--admin-teal)" }}>{log.username}</strong>
-                  <span style={{ color: "var(--admin-text-main)", marginLeft: "0.5rem" }}>{log.action}</span>
-                  {log.details && (
-                    <span style={{ color: "var(--admin-text-muted)", marginLeft: "0.4rem", fontSize: "0.72rem" }}>
-                      ({log.details})
+            {stats?.recent_enquiries && stats.recent_enquiries.length > 0 ? (
+              stats.recent_enquiries.slice(0, 5).map((enq) => (
+                <div
+                  key={enq.id}
+                  style={{
+                    padding: "0.75rem 1rem",
+                    backgroundColor: "var(--admin-surface-subtle)",
+                    borderRadius: "var(--admin-radius-sm)",
+                    border: "1px solid var(--admin-border)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.78rem",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => onNavigateTab("enquiries")}
+                >
+                  <div>
+                    <strong style={{ color: "var(--admin-teal)" }}>{enq.name}</strong>
+                    <span style={{ color: "var(--admin-text-main)", marginLeft: "0.5rem" }}>
+                      {enq.project_type || "Consultation"}
                     </span>
-                  )}
+                    <span style={{ color: "var(--admin-text-muted)", marginLeft: "0.4rem", fontSize: "0.72rem" }}>
+                      ({enq.email})
+                    </span>
+                  </div>
+                  <span
+                    className={`badge-demo ${
+                      enq.status === "NEW" ? "badge-danger" : "badge-published"
+                    }`}
+                    style={{ fontSize: "0.68rem" }}
+                  >
+                    {enq.status}
+                  </span>
                 </div>
-                <span style={{ color: "var(--admin-text-dim)", fontSize: "0.68rem" }}>
-                  {new Date(log.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
+              ))
+            ) : (
+              <div style={{ padding: "1.5rem", color: "var(--admin-text-muted)", textAlign: "center", fontSize: "0.8rem" }}>
+                No customer inquiries received yet.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

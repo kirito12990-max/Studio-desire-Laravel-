@@ -9,6 +9,26 @@ export interface ActionItem {
   date?: string;
 }
 
+export interface RecentEnquirySummary {
+  id: number;
+  reference_number?: string;
+  name: string;
+  email: string;
+  project_type?: string;
+  status: string;
+  created_at?: string;
+}
+
+export interface RecentProjectSummary {
+  id: number;
+  title: string;
+  slug: string;
+  category?: string;
+  publishing_status: string;
+  is_published: boolean;
+  updated_at?: string;
+}
+
 export interface DashboardStats {
   total_projects: number;
   active_projects: number;
@@ -30,6 +50,8 @@ export interface DashboardStats {
   total_project_value: number;
   total_amount_received: number;
   action_items?: ActionItem[];
+  recent_enquiries?: RecentEnquirySummary[];
+  recent_projects?: RecentProjectSummary[];
 }
 
 export interface AdminProject {

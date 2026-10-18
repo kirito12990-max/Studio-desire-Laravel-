@@ -54,6 +54,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Find user for authentication using case-insensitive username or email match.
+     */
+    public static function findForAuth(string $identifier): ?self
+    {
+        $normalized = strtolower(trim($identifier));
+
+        return static::where(function ($query) use ($normalized) {
+            $query->whereRaw('LOWER(username) = ?', [$normalized])
+                  ->orWhereRaw('LOWER(email) = ?', [$normalized]);
+        })->first();
+    }
+
+    /**
      * Check if user is the primary Studio Desire Owner or Master admin.
      */
     public function isOwner(): bool

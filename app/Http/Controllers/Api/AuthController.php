@@ -52,14 +52,11 @@ class AuthController extends Controller
             ], 429);
         }
 
-        $identifier = $request->input('username');
+        $identifier = (string) $request->input('username');
         $password = (string) $request->input('password');
 
-        // Allow login via either username or email
-        $user = User::where(function ($query) use ($identifier) {
-            $query->where('username', $identifier)
-                  ->orWhere('email', $identifier);
-        })->first();
+        // Allow login via either username or email with case-insensitive normalization
+        $user = User::findForAuth($identifier);
 
         if (! $user || ! Hash::check($password, $user->password) || ! $user->is_active) {
             RateLimiter::hit($throttleKey, 60);

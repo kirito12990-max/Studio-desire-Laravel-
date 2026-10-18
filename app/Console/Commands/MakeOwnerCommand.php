@@ -64,8 +64,8 @@ class MakeOwnerCommand extends Command
             return self::FAILURE;
         }
 
-        $user = User::where('email', $email)
-            ->orWhere('username', $username)
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($email)])
+            ->orWhereRaw('LOWER(username) = ?', [strtolower($username)])
             ->first();
 
         if ($user) {

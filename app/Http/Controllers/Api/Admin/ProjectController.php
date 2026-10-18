@@ -57,7 +57,8 @@ class ProjectController extends Controller
             $query->where('featured', $request->boolean('featured'));
         }
 
-        $projects = $query->orderBy('sort_order')
+        $projects = $query->with(['portfolioCategory', 'client'])
+            ->orderBy('sort_order')
             ->orderByDesc('id')
             ->get();
 

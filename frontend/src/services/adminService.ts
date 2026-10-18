@@ -59,8 +59,33 @@ async function handleResponse<T>(res: Response): Promise<T> {
       window.location.hash = "#owner/login";
       throw new Error("Session expired. Please log in again.");
     }
-    const errData = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(errData.detail || `Request failed with status ${res.status}`);
+
+    const errData = await res.json().catch(() => null);
+
+    if (res.status === 419) {
+      throw new Error("CSRF security token mismatch or session expired (HTTP 419). Please refresh.");
+    }
+    if (res.status === 429) {
+      const retry = errData?.retry_after ? ` (retry in ${errData.retry_after}s)` : "";
+      throw new Error((errData?.message || "Rate limit reached. Please try again shortly.") + retry);
+    }
+    if (res.status === 422) {
+      if (errData?.errors && typeof errData.errors === "object") {
+        const firstKey = Object.keys(errData.errors)[0];
+        if (firstKey && Array.isArray(errData.errors[firstKey]) && errData.errors[firstKey].length > 0) {
+          throw new Error(errData.errors[firstKey][0]);
+        }
+      }
+      throw new Error(errData?.message || errData?.detail || "Validation error encountered.");
+    }
+    if (res.status === 403) {
+      throw new Error(errData?.message || errData?.detail || "Access forbidden. Insufficient permissions.");
+    }
+    if (res.status >= 500) {
+      throw new Error(`Server error (${res.status}). Please check system logs.`);
+    }
+
+    throw new Error(errData?.message || errData?.detail || `Request failed with status ${res.status}`);
   }
   return res.json();
 }
