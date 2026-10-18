@@ -64,8 +64,8 @@ assert.strictEqual(
 
 // 2. Absolute backend-hosted URLs
 assert.strictEqual(
-  resolveMediaUrl("http://localhost:8000/uploads/projects/entrance-01.webp"),
-  "http://localhost:8000/uploads/projects/entrance-01.webp",
+  resolveMediaUrl("http://127.0.0.1:8080/uploads/projects/entrance-01.webp"),
+  "http://127.0.0.1:8080/uploads/projects/entrance-01.webp",
   "Test 2 failed: Absolute HTTP URL should be preserved"
 );
 

@@ -65,7 +65,7 @@ export function resolveMediaUrl(
   // Deduplicate repeated /uploads path segments
   cleanPath = cleanPath.replace(/\/uploads\/uploads\//g, "/uploads/");
 
-  // When API_BASE_URL is configured (e.g. http://localhost:8000 or production backend domain),
+  // When API_BASE_URL is configured (e.g. http://127.0.0.1:8080 or production backend domain),
   // prefix backend origin to root-relative media paths
   if (API_BASE_URL && cleanPath.startsWith("/uploads/")) {
     return `${API_BASE_URL}${cleanPath}`;

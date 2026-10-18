@@ -34,6 +34,7 @@ function secureFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<
   const csrfHeaders = isStateChanging ? authService.getCsrfHeaders() : {};
 
   const headers: Record<string, string> = {
+    Accept: "application/json",
     ...csrfHeaders,
     ...((init.headers as Record<string, string>) || {})
   };

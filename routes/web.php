@@ -18,10 +18,17 @@ Route::get('/', function () {
     if (file_exists($indexPath)) {
         return response(file_get_contents($indexPath), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
     return view('welcome');
 });
+
+Route::get('/login', function () {
+    return redirect('/#owner/login');
+})->name('login');
 
 Route::fallback(function (\Illuminate\Http\Request $request) {
     if ($request->is('api/*') || $request->expectsJson()) {
@@ -32,7 +39,11 @@ Route::fallback(function (\Illuminate\Http\Request $request) {
     if (file_exists($indexPath)) {
         return response(file_get_contents($indexPath), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
         ]);
     }
     return response()->json(['message' => 'Resource not found'], 404);
 });
+

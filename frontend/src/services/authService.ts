@@ -80,7 +80,10 @@ export const authService = {
   async refreshCsrfToken(): Promise<string> {
     try {
       const res = await fetch(`${API_BASE}/auth/csrf-token`, {
-        credentials: "include"
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -148,7 +151,10 @@ export const authService = {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify({ username, password })
     });
 
@@ -171,6 +177,7 @@ export const authService = {
         method: "POST",
         credentials: "include",
         headers: {
+          Accept: "application/json",
           ...this.getCsrfHeaders()
         }
       });
@@ -186,7 +193,10 @@ export const authService = {
    */
   async getMe(): Promise<AuthUser> {
     const res = await fetch(`${API_BASE}/auth/me`, {
-      credentials: "include"
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+      },
     });
 
     if (!res.ok) {
@@ -213,6 +223,7 @@ export const authService = {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
         ...this.getCsrfHeaders()
       },
       body: JSON.stringify({
@@ -247,6 +258,7 @@ export const authService = {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        Accept: "application/json",
         ...this.getCsrfHeaders()
       },
       body: JSON.stringify(data)

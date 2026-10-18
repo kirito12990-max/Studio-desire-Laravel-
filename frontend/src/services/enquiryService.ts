@@ -16,6 +16,7 @@ async function secureFetch(input: RequestInfo | URL, init: RequestInit = {}): Pr
   const csrfHeaders = isStateChanging ? authService.getCsrfHeaders() : {};
 
   const headers: Record<string, string> = {
+    Accept: 'application/json',
     ...csrfHeaders,
     ...((init.headers as Record<string, string>) || {}),
   };
